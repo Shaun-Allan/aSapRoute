@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "789625081686",
+    "project_id": "asap-route",
+    "storage_bucket": "asap-route.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:789625081686:android:1ce0e2698da7940fc190f7",
+        "android_client_info": {
+          "package_name": "com.asap.route"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "789625081686-iou50bc3ojf6gqnn1amrl7caopdlu54c.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAxNdDRrvnAwqD5hjkryAItRCtFXAHKtMo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "789625081686-iou50bc3ojf6gqnn1amrl7caopdlu54c.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "789625081686-0uqqmi2ub1sglsdf0t1ks8cd9ht1qin8.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.asap.asapRoute"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
