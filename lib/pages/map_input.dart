@@ -6,6 +6,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:route/inheritance/coordinateState.dart';
 import 'package:location/location.dart' as location;
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:route/components/fav_tile.dart';
 import 'package:route/pages/route.dart';
 import 'package:uuid/uuid.dart';
 import 'package:http/http.dart' as http;
@@ -27,9 +29,13 @@ class _InputPageState extends State<InputPage> {
   FocusNode destFocusNode = FocusNode();
   FocusScopeNode _focusScopeNode = FocusScopeNode();
 
+  LatLng? yourLocation;
+
   var uuid = Uuid();
   String _sessionToken = '123456';
   List<dynamic> _placesList = [];
+
+  int initialized = 0;
 
 
   @override
@@ -58,11 +64,10 @@ class _InputPageState extends State<InputPage> {
       }
     });
 
+    initialized = 1;
 
-    WidgetsBinding.instance.addPostFrameCallback((_) async => await fetchLocationUpdates());
-
-
-
+    WidgetsBinding.instance.addPostFrameCallback((
+        _) async => await fetchLocationUpdates());
   }
 
   void _setAddress(TextEditingController controller, String address) {
@@ -97,35 +102,20 @@ class _InputPageState extends State<InputPage> {
     }
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
 
-    // Access inherited widget here...
-    final destString = CoordinateInheritance.of(context)?.coreState.destString;
-    final sourceString = CoordinateInheritance.of(context)?.coreState.sourceString;
-    if (sourceString != null) {
-      sourceController.text = sourceString;
-    }
-    if (destString != null) {
-      destController.text = destString;
-    }
-  }
-
-
-  @override
-  void dispose() {
-    sourceFocusNode.dispose();
-    destFocusNode.dispose();
-    _focusScopeNode.dispose(); // Dispose the FocusScopeNode
-    super.dispose();
-  }
+  // @override
+  // void dispose() {
+  //   sourceFocusNode.dispose();
+  //   destFocusNode.dispose();
+  //   _focusScopeNode.dispose(); // Dispose the FocusScopeNode
+  //   super.dispose();
+  // }
 
   LatLng? sourceCoordinates;
   LatLng? destCoordinates;
 
 
-  void setCoordinate(LatLng sc, LatLng dc, String ss, String ds){
+  void setCoordinate(LatLng sc, LatLng dc, String ss, String ds) {
     final provider = CoordinateInheritance.of(context);
     provider?.setSource(sc, ss);
     provider?.setDestination(dc, ds);
@@ -133,12 +123,93 @@ class _InputPageState extends State<InputPage> {
     Navigator.pop(context);
   }
 
+  void setYourLocation(LatLng c) {
+    final provider = CoordinateInheritance.of(context);
+    provider?.setYourLocation(c);
+  }
+
+  void checkAndSetLocation(TextEditingController sourceController, TextEditingController destController, LatLng? yourLocationCoordinates) async {
+    if (sourceController.text.isNotEmpty && destController.text.isNotEmpty) {
+      LatLng sourceLocation;
+      LatLng destLocation;
+      String yourLocationString = "";
+
+      if (sourceController.text == 'Your location') {
+        if (yourLocationCoordinates != null) {
+          sourceLocation = yourLocationCoordinates;
+          List<Placemark> placemarks = await placemarkFromCoordinates(sourceLocation.latitude, sourceLocation.longitude);
+          yourLocationString = placemarks.isNotEmpty ? placemarks.reversed.last.subLocality ?? '' : '';
+        } else {
+          // Handle case where yourLocationCoordinates is null
+          return;
+        }
+      } else {
+        List<Location> slocations = await locationFromAddress(sourceController.text);
+        sourceLocation = LatLng(slocations.first.latitude, slocations.first.longitude);
+      }
+
+      if (destController.text == 'Your location') {
+        if (yourLocationCoordinates != null) {
+          destLocation = yourLocationCoordinates;
+          List<Placemark> placemarks = await placemarkFromCoordinates(destLocation.latitude, destLocation.longitude);
+          yourLocationString = placemarks.isNotEmpty ? placemarks.reversed.last.subLocality ?? '' : '';
+        } else {
+          // Handle case where yourLocationCoordinates is null
+          return;
+        }
+      } else {
+        List<Location> dlocations = await locationFromAddress(destController.text);
+        destLocation = LatLng(dlocations.first.latitude, dlocations.first.longitude);
+      }
+
+      print(yourLocationString);
+
+      if (mounted) {
+        setCoordinate(
+          sourceLocation,
+          destLocation,
+          sourceController.text,
+          destController.text,
+        );
+      }
+    }
+  }
+
+
+
 
   @override
   Widget build(BuildContext context) {
+    if(initialized == 1){
+      final destString = CoordinateInheritance.of(context)?.coreState.destString;
+      final sourceString = CoordinateInheritance.of(context)?.coreState.sourceString;
+      final yourLocationCoordinates = CoordinateInheritance.of(context)?.coreState.yourLocationCoordinates;
+      if (sourceString != null) {
+        sourceController.text = sourceString;
+      }
+      else{
+        if(yourLocationCoordinates != null){
+          sourceController.text = "Your Location";
+        }
+      }
+      if (destString != null) {
+        destController.text = destString;
+      }
+      initialized = 0;
+    }
+
+
+
     final destString = CoordinateInheritance.of(context)?.coreState.destString;
+    // final yourLocationString = CoordinateInheritance.of(context)?.coreState.yourLocationString;
+    final yourLocationCoordinates = CoordinateInheritance.of(context)?.coreState.yourLocationCoordinates;
     final sourceString = CoordinateInheritance.of(context)?.coreState.sourceString;
+
+
+
+
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       body: Padding(
         padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 0.0),
         child: Column(
@@ -208,7 +279,7 @@ class _InputPageState extends State<InputPage> {
                               ),
                               border: InputBorder.none,
                               contentPadding: EdgeInsets.symmetric(
-                                  vertical: 10, horizontal: 0),
+                                  vertical: 10, horizontal: 16),
                             ),
                           ),
                         ),
@@ -274,7 +345,7 @@ class _InputPageState extends State<InputPage> {
                               contentPadding: EdgeInsets.symmetric(
                                   vertical: 10, horizontal: 16),
                               prefixIcon:
-                              Icon(Icons.location_on, color: destString!=null ? Colors.red : Colors.grey),
+                              Icon(Icons.location_on, color: Colors.red),
                             ),
                           ),
                         ),
@@ -285,77 +356,126 @@ class _InputPageState extends State<InputPage> {
               ),
             ),
             SizedBox(height: 20), // Spacer between destination field and "Your Location" box
-            Row(
-              children: [
-                Expanded(
-                  child: Container(
-                    padding: EdgeInsets.symmetric(vertical: 15, horizontal: 12),
-                    decoration: BoxDecoration(
-                      color: Colors.greenAccent.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(50),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          CupertinoIcons.map_pin_ellipse,
-                          color: Color.fromARGB(200, 34, 139, 34),
-                        ),
-                        SizedBox(width: 10), // Space between icon and text
-                        Text(
-                          'Your Location',
-                          style: GoogleFonts.lato(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: Color.fromARGB(200, 34, 139, 34),
-                          ),
-                        ),
-                      ],
-                    ),
+            OutlinedButton(
+              onPressed: () async {
+                await fetchLocationUpdates();
+                if (sourceFocusNode.hasFocus && yourLocationCoordinates != null) {
+                  sourceController.text = "Your location";
+                }
+                if (destFocusNode.hasFocus && yourLocationCoordinates != null) {
+                  destController.text = "Your location";
+                }
+                checkAndSetLocation(sourceController, destController, yourLocationCoordinates);
+              },
+              style: OutlinedButton.styleFrom(
+                padding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                side: BorderSide(color: Color.fromARGB(200, 34, 139, 34)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(50),
                 ),
               ),
-              ],
+              child: Row(
+                children: [
+                  Icon(
+                    FontAwesomeIcons.locationCrosshairs,
+                    color: Color.fromARGB(200, 34, 139, 34),
+                  ),
+                  SizedBox(width: 10), // Space between icon and text
+                  Text(
+                    'Your Location',
+                    style: GoogleFonts.lato(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: Color.fromARGB(200, 34, 139, 34),
+                    ),
+                  ),
+                ],
+              ),
             ),
             SizedBox(
               height: 0,
             ),
             Expanded(
-              child: ListView.separated(
-                separatorBuilder: (context, index) => Divider(),
-                itemCount: _placesList.length,
-                itemBuilder: (context, index) {
-                  return ListTile(
-                    tileColor: Colors.white,
-                    onTap: () async {
-                      List<Location> locations = await locationFromAddress(_placesList[index]['description']);
-                      _setAddress(sourceFocusNode.hasFocus ? sourceController : destController, _placesList[index]['structured_formatting']['main_text']);
-                      if(sourceController.text.isNotEmpty && destController.text.isNotEmpty){
-                          List<Location> slocations = await locationFromAddress(sourceController.text);
-                          List<Location> dlocations = await locationFromAddress(destController.text);
-                          setCoordinate(LatLng(slocations.first.latitude, slocations.first.longitude),
-                                        LatLng(dlocations.first.latitude, dlocations.first.longitude),
-                                        sourceController.text,
-                                        destController.text
-                                        );
-                      }
-                    },
-                    title: Text(
-                      _placesList[index]['structured_formatting']['main_text'],
-                      style: GoogleFonts.lato(
-                        fontSize: 16,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+              child: Stack(
+                children: [
+
+                  Container(
+                    color: Colors.white.withOpacity(0.8),
+                    padding: EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(height: 10,),
+                        Text(
+                          'Favorites',
+                          style: GoogleFonts.oxygen(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: Color.fromARGB(180, 0, 0, 0),
+                          ),
+                        ),
+                        SizedBox(height: 8),
+                        Row(
+                          children: [
+                            FavoriteTile(
+                              title: 'Home',
+                              onTap: () {
+                                // Handle onTap for Favorite Place 1
+                              },
+                            ),
+                            FavoriteTile(
+                              title: 'Office',
+                              onTap: () {
+                                // Handle onTap for Favorite Place 1
+                              },
+                            ),
+                            FavoriteTile(
+                              title: 'Work',
+                              onTap: () {
+                                // Handle onTap for Favorite Place 1
+                              },
+                            ),
+                          ],
+                        ),
+
+                      ],
                     ),
-                    subtitle: Text(
-                      _placesList[index]['description'],
-                      style: GoogleFonts.lato(
-                        fontSize: 13.5,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                  ),
+                  if((sourceFocusNode.hasFocus && sourceController.text.isNotEmpty) || (destFocusNode.hasFocus && destController.text.isNotEmpty) )
+                  Container(
+                    color: Colors.white,
+                    child: ListView.separated(
+                      separatorBuilder: (context, index) => Divider(),
+                      itemCount: _placesList.length,
+                      itemBuilder: (context, index) {
+                        return ListTile(
+                          tileColor: Colors.white,
+                          onTap: () async {
+                            List<Location> locations = await locationFromAddress(_placesList[index]['description']);
+                            _setAddress(sourceFocusNode.hasFocus ? sourceController : destController, _placesList[index]['structured_formatting']['main_text']);
+                            checkAndSetLocation(sourceController, destController, yourLocationCoordinates);
+                          },
+                          title: Text(
+                            _placesList[index]['structured_formatting']['main_text'],
+                            style: GoogleFonts.lato(
+                              fontSize: 16,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          subtitle: Text(
+                            _placesList[index]['description'],
+                            style: GoogleFonts.lato(
+                              fontSize: 13.5,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        );
+                      },
                     ),
-                  );
-                },
+                  ),
+                ]
               ),
             )
           ],
@@ -369,26 +489,42 @@ class _InputPageState extends State<InputPage> {
     bool serviceEnabled;
     location.PermissionStatus permissionGranted;
 
+    // Check if service is enabled
     serviceEnabled = await locationController.serviceEnabled();
-    if(serviceEnabled){
+    if (!serviceEnabled) {
       serviceEnabled = await locationController.requestService();
-    }
-    else{
-      return;
+      if (!serviceEnabled) {
+        // Service is not enabled, handle it appropriately (show a message, etc.)
+        print('Location service is not enabled.');
+        return;
+      }
     }
 
+    // Check for location permissions
     permissionGranted = await locationController.hasPermission();
-    if(permissionGranted == location.PermissionStatus.denied){
+    if (permissionGranted == location.PermissionStatus.denied) {
       permissionGranted = await locationController.requestPermission();
-    }
-    if(permissionGranted != location.PermissionStatus.denied){
-      return;
+      if (permissionGranted != location.PermissionStatus.granted) {
+        // Permissions are not granted, handle it appropriately (show a message, etc.)
+        print('Location permission is not granted.');
+        return;
+      }
     }
 
-    locationController.onLocationChanged.listen((currentLocation){
+    // Start listening to location changes
+    locationController.onLocationChanged.listen((currentLocation) {
+
+      setState(() {
+        LatLng yourLocation = LatLng(currentLocation.latitude!, currentLocation.longitude!);
+        setYourLocation(yourLocation);
+      });
       print(currentLocation.latitude);
       print(currentLocation.longitude);
     });
   }
+
+
+
+
 
 }

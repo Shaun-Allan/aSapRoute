@@ -37,6 +37,18 @@ class _CoordinateStateState extends State<CoordinateState> {
     });
   }
 
+
+  void setYourLocation(LatLng coordinate) {
+    final newState = coreState.copy(
+      yourLocationCoordinates: coordinate,
+      // yourLocationString: desc,
+    );
+    setState(() {
+      coreState = newState;
+    });
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return CoordinateInheritance(

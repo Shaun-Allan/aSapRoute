@@ -51,28 +51,11 @@ class _HomeState extends State<Home> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        brightness: Brightness.light,
-        scaffoldBackgroundColor: Colors.white,
-        appBarTheme: AppBarTheme(
-          backgroundColor: Color.fromARGB(200, 34, 139, 34),
-          titleTextStyle: TextStyle(
-            color: Colors.white,
-            fontSize: 22.0
-          )
-        ),
-        bottomNavigationBarTheme: BottomNavigationBarThemeData(
-          backgroundColor: Color.fromARGB(100, 206, 243, 206)
-        )
-      ),
-      home: Scaffold(
-        // backgroundColor: Colors.white,
-        appBar: _mainWrapperAppBar(),
-        body: _mainWrapperBody(),
-        bottomNavigationBar: _mainWrapperBottomNavBar(context),
-      ),
+    return Scaffold(
+      // backgroundColor: Colors.white,
+      appBar: _mainWrapperAppBar(),
+      body: _mainWrapperBody(),
+      bottomNavigationBar: _mainWrapperBottomNavBar(context),
     );
   }
 

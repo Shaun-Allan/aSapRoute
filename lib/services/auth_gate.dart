@@ -1,83 +1,197 @@
 import 'package:firebase_auth/firebase_auth.dart' hide EmailAuthProvider;
 import 'package:firebase_ui_auth/firebase_ui_auth.dart';
 import 'package:firebase_ui_oauth_google/firebase_ui_oauth_google.dart'; // new
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:route/components/sign_in_button.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_any_logo/flutter_logo.dart';
 
 import 'package:route/pages/home.dart';
 import 'package:google_fonts/google_fonts.dart';
-class MyAppColors {
-  static final darkBlue = Color(0xFF1E1E2C);
-  static final lightBlue = Color(0xFF2D2D44);
-}
-class MyAppThemes {
-  static final lightTheme = ThemeData(
-    primaryColor: MyAppColors.lightBlue,
-    brightness: Brightness.light,
-  );
 
-  static final darkTheme = ThemeData(
-    primaryColor: MyAppColors.darkBlue,
-    brightness: Brightness.dark,
-  );
-}
+import '../pages/sign_in_with_email.dart';
+
 class AuthGate extends StatelessWidget {
-  const AuthGate({super.key});
+  const AuthGate({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<User?>(
-          stream: FirebaseAuth.instance.authStateChanges(),
-          builder: (context, snapshot) {
-            if (!snapshot.hasData) {
-              return SignInScreen(
-                providers: [
-                  EmailAuthProvider(),
-                  GoogleProvider(clientId: "789625081686-iou50bc3ojf6gqnn1amrl7caopdlu54c.apps.googleusercontent.com"),  // new
-                ],
-                // headerBuilder: (context, constraints, shrinkOffset) {
-                //   return Padding(
-                //     padding: const EdgeInsets.all(20),
-                //     child: SizedBox(
-                //       width: 500, // Set desired width
-                //       height: 500, // Set desired height
-                //       child: AspectRatio(
-                //         aspectRatio: 1,
-                //         child: Image.asset('assets/logo.png'),
-                //       ),
-                //     ),
-                //   );
-                // },
-                // subtitleBuilder: (context, action) {
-                //   return Padding(
-                //     padding: const EdgeInsets.symmetric(vertical: 8.0),
-                //     child: action == AuthAction.signIn
-                //         ? const Text('Welcome to FlutterFire, please sign in!')
-                //         : const Text('Welcome to Flutterfire, please sign up!'),
-                //   );
-                // },
-                // footerBuilder: (context, action) {
-                //   return const Padding(
-                //     padding: EdgeInsets.only(top: 16),
-                //     child: Text(
-                //       'By signing in, you agree to our terms and conditions.',
-                //       style: TextStyle(color: Colors.grey),
-                //     ),
-                //   );
-                // },
-                // sideBuilder: (context, shrinkOffset) {
-                //   return Padding(
-                //     padding: const EdgeInsets.all(20),
-                //     child: AspectRatio(
-                //       aspectRatio: 1,
-                //       child: Image.asset('flutterfire_300x.png'),
-                //     ),
-                //   );
-                // },
-              );
-            }
 
-            return const Home();
-          },
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
+      statusBarColor: Color.fromARGB(255, 34, 139, 34) // Change status bar color her
+    ));
+
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return SafeArea(
+            child: Scaffold(
+              resizeToAvoidBottomInset: false,
+              body: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                child: Column(
+                  children: [
+                    Spacer(),
+                    Text(
+                      "aSapRoute",
+                      style: GoogleFonts.oxygen(
+                        fontSize: 35,
+                        fontWeight: FontWeight.w700,
+                        color: Color.fromARGB(200, 34, 139, 34),
+                      ),
+                    ),
+                    const Spacer(), // Pushes the buttons to the center
+                    Column(
+                      children: [
+                        SignInButton(
+                          text: "Sign in with Google",
+                          textColor: Colors.black,
+                          color: Colors.white,
+                          onPressed: () {
+                            signInWithGoogle();
+                          },
+                          imagePath: 'assets/google.png', // Replace with your actual image asset path
+                          imageWidth: 60, // Provide desired image width
+                          imageHeight: 35, // Provide desired image height
+                        ),
+                        const SizedBox(height: 30.0),
+                        SignInButton(
+                          text: "Sign in with Facebook",
+                          textColor: Colors.white,
+                          color: Color.fromARGB(255, 59, 89, 152),
+                          onPressed: () {
+                            // Implement Google sign-in logic here
+                          },
+                          imagePath: 'assets/facebook.png', // Replace with your actual image asset path
+                          imageWidth: 60, // Provide desired image width
+                          imageHeight: 40, // Provide desired image height
+                        ),
+                        const SizedBox(height: 30.0),
+                        SignInButton(
+                          text: "Sign in with Apple",
+                          textColor: Colors.white,
+                          color: Colors.black,
+                          onPressed: () {
+                            // Implement Google sign-in logic here
+                          },
+                          imagePath: 'assets/apple.png', // Replace with your actual image asset path
+                          imageWidth: 60, // Provide desired image width
+                          imageHeight: 50, // Provide desired image height
+                        ),
+                        const SizedBox(height: 30),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Container(
+                                margin: const EdgeInsets.only(left: 20.0, right: 15.0),
+                                child: const Divider(
+                                  color: Color.fromARGB(50, 0, 0, 0),
+                                  height: 36,
+                                ),
+                              ),
+                            ),
+                            Text(
+                              "or",
+                              style: GoogleFonts.lato(
+                                color: Color.fromARGB(50, 0, 0, 0),
+                              ),
+                            ),
+                            Expanded(
+                              child: Container(
+                                margin: const EdgeInsets.only(left: 15.0, right: 20.0),
+                                child: const Divider(
+                                  color: Color.fromARGB(50, 0, 0, 0),
+                                  height: 36,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 30),
+                        SignInButton(
+                          text: "Sign in with Email",
+                          textColor: Colors.white,
+                          color: Color.fromARGB(200, 34, 139, 34),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              PageRouteBuilder(
+                                pageBuilder: (context, animation, secondaryAnimation) => SignInWithEmail(),
+                                transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                  const begin = Offset(1.0, 0.0);
+                                  const end = Offset.zero;
+                                  const curve = Curves.easeInOut;
+                                  var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+                                  var offsetAnimation = animation.drive(tween);
+                                  return SlideTransition(
+                                    position: offsetAnimation,
+                                    child: child,
+                                  );
+                                },
+                              ),
+                            );
+                          },
+                          imagePath: 'assets/apple.png', // Replace with your actual image asset path
+                          imageWidth: 60, // Provide desired image width
+                          imageHeight: 50, // Provide desired image height
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 70,),
+                    const Spacer(), // Pushes the buttons to the center
+                  ],
+                ),
+              ),
+            ),
+          );
+        }
+
+        return const Home();
+      },
+    );
+  }
+
+  Future<void> signInWithGoogle() async {
+    try {
+      GoogleSignIn googleSignIn = GoogleSignIn(
+        clientId: "789625081686-iou50bc3ojf6gqnn1amrl7caopdlu54c.apps.googleusercontent.com", // Replace with your OAuth 2.0 client ID
+        scopes: [
+          'email',
+          'https://www.googleapis.com/auth/contacts.readonly',
+        ],
+      );
+
+      GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+      if (googleUser != null) {
+        GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+        OAuthCredential credential = GoogleAuthProvider.credential(
+          accessToken: googleAuth.accessToken,
+          idToken: googleAuth.idToken,
         );
+        await FirebaseAuth.instance.signInWithCredential(credential);
+      }
+    } catch (e) {
+      print('Error signing in with Google: $e');
+    }
   }
 }
+
+
+
+
+
+
+
+
+
+// return SignInScreen(
+// providers: [
+// EmailAuthProvider(),
+// GoogleProvider(clientId: "789625081686-iou50bc3ojf6gqnn1amrl7caopdlu54c.apps.googleusercontent.com"),  // new
+// ],
+// );

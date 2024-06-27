@@ -4,6 +4,7 @@
 
 list(APPEND FLUTTER_PLUGIN_LIST
   desktop_webview_auth
+  flutter_any_logo
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST

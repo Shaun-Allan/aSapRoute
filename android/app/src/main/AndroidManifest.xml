@@ -4,6 +4,7 @@
     <application
         android:label="aSapRoute"
         android:name="${applicationName}"
+        android:enableOnBackInvokedCallback="true"
         android:icon="@mipmap/ic_launcher">
         <meta-data android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyDFRYFYWQ5Q12KnevFyxKJMgiu7Rui-mF8"/>

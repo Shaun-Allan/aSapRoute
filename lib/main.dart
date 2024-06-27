@@ -28,7 +28,18 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
-          brightness: Brightness.dark
+            brightness: Brightness.light,
+            scaffoldBackgroundColor: Colors.white,
+            appBarTheme: AppBarTheme(
+                backgroundColor: Color.fromARGB(200, 34, 139, 34),
+                titleTextStyle: TextStyle(
+                    color: Colors.white,
+                    fontSize: 22.0
+                )
+            ),
+            bottomNavigationBarTheme: BottomNavigationBarThemeData(
+                backgroundColor: Color.fromARGB(100, 206, 243, 206)
+            )
         ),
         title: "aSapRoute",
         home: BlocProvider(
