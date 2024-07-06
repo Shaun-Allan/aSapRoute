@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -5,6 +6,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:route/pages/settings/plans_and_subscriptions.dart';
 import 'package:route/pages/settings/profile.dart';
+
+import '../inheritance/data_hub.dart';
+
 
 class Settings extends StatefulWidget {
   const Settings({super.key});
@@ -151,8 +155,19 @@ class ProfileContent extends StatefulWidget {
 }
 
 class _ProfileContentState extends State<ProfileContent> {
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+
+
+
   @override
   Widget build(BuildContext context) {
+    final userModel = DataInheritance.of(context)?.coreState.userModel;
+
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -209,10 +224,33 @@ class _ProfileContentState extends State<ProfileContent> {
                     ),
                   ),
                   SizedBox(width: 20.0),
-                  Text(
-                    "Profile Name",
-                    style: GoogleFonts.poppins(
+                  userModel != null
+                      ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        userModel.Name,
+                        style: GoogleFonts.poppins(
+                          fontSize: 16.0,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      // SizedBox(height: 5.0),
+                      // Text(
+                      //   userProfileSnapshot!['Email'],
+                      //   style: TextStyle(
+                      //     fontSize: 14.0,
+                      //     color: Colors.grey,
+                      //   ),
+                      //   overflow: TextOverflow.ellipsis,
+                      // ),
+                    ],
+                  )
+                     :  Text(
+                    "Loading...",
+                    style: TextStyle(
                       fontSize: 16.0,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                   Spacer(),

@@ -126,9 +126,10 @@ class _SignInWithEmailState extends State<SignInWithEmail> {
 
   @override
   Widget build(BuildContext context) {
+    final screen = MediaQuery.of(context).size.height;
     return SafeArea(
       child: Scaffold(
-        resizeToAvoidBottomInset: false,
+        resizeToAvoidBottomInset: true,
         appBar: AppBar(
           backgroundColor: Colors.white,
           title: Text(
@@ -139,187 +140,189 @@ class _SignInWithEmailState extends State<SignInWithEmail> {
             ),
           ),
         ),
-        body: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Spacer(),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Sign in",
-                      style: GoogleFonts.poppins(
-                        fontSize: 24,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(height: 30),
-              Container(
-                child: Column(
-                  children: [
-                    AnimatedContainer(
-                      duration: Duration(milliseconds: 300),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(8.0),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 10,
-                            offset: Offset(0, 5),
-                          ),
-                        ],
-                        border: Border(
-                          bottom: BorderSide(
-                            color: _isEmailFocused ? Colors.green : Colors.grey,
-                            width: 2.0,
-                          ),
+        body: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SizedBox(height: screen*0.14,),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Sign in",
+                        style: GoogleFonts.poppins(
+                          fontSize: 24,
                         ),
                       ),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                        child: TextField(
-                          controller: _emailController,
-                          focusNode: _emailFocusNode,
-                          style: GoogleFonts.lato(),
-                          decoration: InputDecoration(
-                            labelText: "Enter email",
-                            labelStyle: GoogleFonts.lato(
-                              color: _isEmailFocused ? Colors.green : Colors.grey,
-                            ),
-                            border: InputBorder.none,
-                          ),
-                        ),
-                      ),
-                    ),
-                    if (_emailError != null)
-                      Padding(
-                        padding: const EdgeInsets.only(left: 4.0, top: 8.0),
-                        child: Row(
-                          children: [
-                            Text(
-                              _emailError!,
-                              style: TextStyle(color: Colors.red, fontSize: 12),
-                              textAlign: TextAlign.start,
-                            ),
-                          ],
-                        ),
-                      ),
-                    SizedBox(height: 30.0),
-                    AnimatedContainer(
-                      duration: Duration(milliseconds: 300),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(8.0),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 10,
-                            offset: Offset(0, 5),
-                          ),
-                        ],
-                        border: Border(
-                          bottom: BorderSide(
-                            color: _isPasswordFocused ? Colors.green : Colors.grey,
-                            width: 2.0,
-                          ),
-                        ),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                        child: TextField(
-                          controller: _passwordController,
-                          focusNode: _passwordFocusNode,
-                          obscureText: !_isPasswordVisible,
-                          style: GoogleFonts.lato(),
-                          decoration: InputDecoration(
-                            labelText: "Enter password",
-                            labelStyle: GoogleFonts.lato(
-                              color: _isPasswordFocused ? Colors.green : Colors.grey,
-                            ),
-                            border: InputBorder.none,
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
-                                color: _isPasswordFocused ? Colors.green : Colors.grey,
-                              ),
-                              onPressed: () {
-                                setState(() {
-                                  _isPasswordVisible = !_isPasswordVisible;
-                                });
-                              },
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    if (_passwordError != null)
-                      Padding(
-                        padding: const EdgeInsets.only(left: 4.0, top: 8.0),
-                        child: Row(
-                          children: [
-                            Text(
-                              _passwordError!,
-                              style: TextStyle(color: Colors.red, fontSize: 12),
-                              textAlign: TextAlign.start,
-                            ),
-                          ],
-                        ),
-                      ),
-                    SizedBox(height: 50.0),
-                    SignInButton(
-                      text: "Sign in with Email",
-                      textColor: Colors.white,
-                      color: Color.fromARGB(200, 34, 139, 34),
-                      onPressed: _signInWithEmailAndPassword,
-                      imagePath: 'assets/apple.png', // Replace with your actual image asset path
-                      imageWidth: 60, // Provide desired image width
-                      imageHeight: 50,
-                      centerText: true, // Provide desired image height
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(height: 50,),
-              Spacer(),
-              GestureDetector(
-                onTap: () {
-                  Navigator.of(context).push(
-                    PageRouteBuilder(
-                      transitionDuration: Duration(milliseconds: 500), // Adjust the duration for a smoother animation
-                      pageBuilder: (context, animation, secondaryAnimation) => SignUpWithEmail(),
-                      transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                        const begin = Offset(0, 1);
-                        const end = Offset.zero;
-                        const curve = Curves.easeInOut;
-
-                        var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-                        var offsetAnimation = animation.drive(tween);
-
-                        return SlideTransition(
-                          position: offsetAnimation,
-                          child: child,
-                        );
-                      },
-                    ),
-                  );
-                },
-                child: Text(
-                  "Don't have an account? Sign Up",
-                  style: GoogleFonts.lato(
-                    color: Colors.green,
-                    decoration: TextDecoration.underline,
+                    ],
                   ),
                 ),
-              ),
-              SizedBox(height: 24.0),
-            ],
+                SizedBox(height: 30),
+                Container(
+                  child: Column(
+                    children: [
+                      AnimatedContainer(
+                        duration: Duration(milliseconds: 300),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8.0),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 10,
+                              offset: Offset(0, 5),
+                            ),
+                          ],
+                          border: Border(
+                            bottom: BorderSide(
+                              color: _isEmailFocused ? Colors.green : Colors.grey,
+                              width: 2.0,
+                            ),
+                          ),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                          child: TextField(
+                            controller: _emailController,
+                            focusNode: _emailFocusNode,
+                            style: GoogleFonts.lato(),
+                            decoration: InputDecoration(
+                              labelText: "Enter email",
+                              labelStyle: GoogleFonts.lato(
+                                color: _isEmailFocused ? Colors.green : Colors.grey,
+                              ),
+                              border: InputBorder.none,
+                            ),
+                          ),
+                        ),
+                      ),
+                      if (_emailError != null)
+                        Padding(
+                          padding: const EdgeInsets.only(left: 4.0, top: 8.0),
+                          child: Row(
+                            children: [
+                              Text(
+                                _emailError!,
+                                style: TextStyle(color: Colors.red, fontSize: 12),
+                                textAlign: TextAlign.start,
+                              ),
+                            ],
+                          ),
+                        ),
+                      SizedBox(height: 30.0),
+                      AnimatedContainer(
+                        duration: Duration(milliseconds: 300),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8.0),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 10,
+                              offset: Offset(0, 5),
+                            ),
+                          ],
+                          border: Border(
+                            bottom: BorderSide(
+                              color: _isPasswordFocused ? Colors.green : Colors.grey,
+                              width: 2.0,
+                            ),
+                          ),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 12.0),
+                          child: TextField(
+                            controller: _passwordController,
+                            focusNode: _passwordFocusNode,
+                            obscureText: !_isPasswordVisible,
+                            style: GoogleFonts.lato(),
+                            decoration: InputDecoration(
+                              labelText: "Enter password",
+                              labelStyle: GoogleFonts.lato(
+                                color: _isPasswordFocused ? Colors.green : Colors.grey,
+                              ),
+                              border: InputBorder.none,
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                                  color: _isPasswordFocused ? Colors.green : Colors.grey,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _isPasswordVisible = !_isPasswordVisible;
+                                  });
+                                },
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      if (_passwordError != null)
+                        Padding(
+                          padding: const EdgeInsets.only(left: 4.0, top: 8.0),
+                          child: Row(
+                            children: [
+                              Text(
+                                _passwordError!,
+                                style: TextStyle(color: Colors.red, fontSize: 12),
+                                textAlign: TextAlign.start,
+                              ),
+                            ],
+                          ),
+                        ),
+                      SizedBox(height: 50.0),
+                      SignInButton(
+                        text: "Sign in with Email",
+                        textColor: Colors.white,
+                        color: Color.fromARGB(200, 34, 139, 34),
+                        onPressed: _signInWithEmailAndPassword,
+                        imagePath: 'assets/apple.png', // Replace with your actual image asset path
+                        imageWidth: 60, // Provide desired image width
+                        imageHeight: 50,
+                        centerText: true, // Provide desired image height
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 50,),
+                SizedBox(height: screen*0.14,),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.of(context).push(
+                      PageRouteBuilder(
+                        transitionDuration: Duration(milliseconds: 500), // Adjust the duration for a smoother animation
+                        pageBuilder: (context, animation, secondaryAnimation) => SignUpWithEmail(),
+                        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                          const begin = Offset(0, 1);
+                          const end = Offset.zero;
+                          const curve = Curves.easeInOut;
+          
+                          var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+                          var offsetAnimation = animation.drive(tween);
+          
+                          return SlideTransition(
+                            position: offsetAnimation,
+                            child: child,
+                          );
+                        },
+                      ),
+                    );
+                  },
+                  child: Text(
+                    "Don't have an account? Sign Up",
+                    style: GoogleFonts.lato(
+                      color: Colors.green,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
+                SizedBox(height: 24.0),
+              ],
+            ),
           ),
         ),
       ),

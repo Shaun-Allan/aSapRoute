@@ -1,8 +1,9 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:route/bloc/bottom_nav_cubit.dart';
-import 'package:route/inheritance/coordinateState.dart';
+import 'package:route/inheritance/data_hub.dart';
 import 'firebase_options.dart';
 
 import 'package:flutter/material.dart';
@@ -16,6 +17,9 @@ void main() async{
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  FirebaseFirestore.instance.settings = const Settings(
+    persistenceEnabled: true,
+  );
   runApp(const MyApp());
 }
 
@@ -24,7 +28,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CoordinateState(
+    return DataState(
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         theme: ThemeData(

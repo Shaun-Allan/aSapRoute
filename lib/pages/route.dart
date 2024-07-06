@@ -3,7 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:route/inheritance/coordinateState.dart';
+import 'package:route/inheritance/data_hub.dart';
 import 'package:route/inheritance/core_state.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:route/pages/map_input.dart';
@@ -13,6 +13,7 @@ import 'package:iconly/iconly.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:route/services/compass_marker.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
+import 'package:http/http.dart' as http;
 
 
 class Reroute extends StatefulWidget {
@@ -67,15 +68,36 @@ class _RerouteState extends State<Reroute> {
     controller.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
   }
 
+  Set<TileOverlay> _tileOverlays = {};
+
+  void _addTileOverlay() {
+    final TileOverlay tileOverlay = TileOverlay(
+      tileOverlayId: TileOverlayId('tile_overlay_id'),
+      tileProvider: UrlTileProvider(
+        256,
+        256,
+            (x, y, zoom) {
+          // Replace with your tile server URL pattern
+              zoom = zoom;
+          return 'http://192.168.1.6:8080/'+zoom.toString()+'/'+x.toString()+'/'+y.toString()+'.png';
+        },
+      ),
+    );
+
+    setState(() {
+      _tileOverlays.add(tileOverlay);
+    });
+  }
+
 
 
   @override
   Widget build(BuildContext context) {
-    final destString = CoordinateInheritance.of(context)?.coreState.destString;
-    final sourceString = CoordinateInheritance.of(context)?.coreState.sourceString;
-    final destCoordinates = CoordinateInheritance.of(context)?.coreState.destCoordinates;
-    final sourceCoordinates = CoordinateInheritance.of(context)?.coreState.sourceCoordinates;
-    final yourLocationCoordinates = CoordinateInheritance.of(context)?.coreState.yourLocationCoordinates;
+    final destString = DataInheritance.of(context)?.coreState.destString;
+    final sourceString = DataInheritance.of(context)?.coreState.sourceString;
+    final destCoordinates = DataInheritance.of(context)?.coreState.destCoordinates;
+    final sourceCoordinates = DataInheritance.of(context)?.coreState.sourceCoordinates;
+    final yourLocationCoordinates = DataInheritance.of(context)?.coreState.yourLocationCoordinates;
 
     if (destCoordinates != null && sourceCoordinates != null) {
       _markers = <Marker>[
@@ -98,13 +120,18 @@ class _RerouteState extends State<Reroute> {
     }
 
 
-    if (yourLocationCoordinates != null) {
-      _markers.add(Marker(
-        markerId: MarkerId('your_location'),
-        position: yourLocationCoordinates,
-        icon: BitmapDescriptor.defaultMarkerWithHue(255),
-      ));
-    }
+
+    // if (yourLocationCoordinates != null) {
+    //   _markers.add(Marker(
+    //     markerId: MarkerId('your_location'),
+    //     position: yourLocationCoordinates,
+    //     icon: BitmapDescriptor.defaultMarkerWithHue(255),
+    //   ));
+    // }
+
+    _addTileOverlay();
+
+
 
 
 
@@ -114,9 +141,10 @@ class _RerouteState extends State<Reroute> {
         children: [
           GoogleMap(
             myLocationButtonEnabled: true,
+            myLocationEnabled: true,
             initialCameraPosition: CameraPosition(
               target: yourLocationCoordinates ?? LatLng(12.752059035456769, 80.20327134232357),
-              zoom: 14,
+              zoom: 16,
             ),
             markers: Set<Marker>.of(_markers),
             polylines: Set<Polyline>.of(polylines.values),
@@ -125,6 +153,7 @@ class _RerouteState extends State<Reroute> {
             onMapCreated: (GoogleMapController controller) {
               _controller.complete(controller);
             },
+            tileOverlays: _tileOverlays,
           ),
           Positioned(
             top: 16.5,
@@ -235,7 +264,7 @@ class _RerouteState extends State<Reroute> {
   }
 
   void setYourLocation(LatLng c) {
-    final provider = CoordinateInheritance.of(context);
+    final provider = DataInheritance.of(context);
     provider?.setYourLocation(c);
   }
 
@@ -270,12 +299,8 @@ class _RerouteState extends State<Reroute> {
     // Update the state with the current location
     setState(() {
       setYourLocation(yourLocation);
-      _markers.add(Marker(
-        markerId: MarkerId('your_location'),
-        position: yourLocation,
-        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
-      ));
     });
+
 
     // Move the camera to the current location
     final controller = await _controller.future;
@@ -286,14 +311,10 @@ class _RerouteState extends State<Reroute> {
       final yourLocation = LatLng(currentLocation.latitude!, currentLocation.longitude!);
       setState(() {
         setYourLocation(yourLocation);
-        _markers.add(Marker(
-          markerId: MarkerId('your_location'),
-          position: yourLocation,
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
-        ));
       });
       print(currentLocation.latitude);
       print(currentLocation.longitude);
+
 
 
     });
@@ -379,3 +400,28 @@ class _RerouteState extends State<Reroute> {
     }
   }
 }
+
+
+class UrlTileProvider extends TileProvider {
+  final int tileWidth;
+  final int tileHeight;
+  final String Function(int x, int y, int zoom) tileUrlTemplate;
+
+  UrlTileProvider(this.tileWidth, this.tileHeight, this.tileUrlTemplate);
+
+  @override
+  Future<Tile> getTile(int x, int y, int? zoom) async {
+    // Invert y coordinate if necessary
+    y = (1 << zoom!) - y - 1;
+    final String tileUrl = tileUrlTemplate(x, y, zoom); // Use the corrected y
+    final response = await http.get(Uri.parse(tileUrl));
+
+    if (response.statusCode == 200) {
+      return Tile(tileWidth, tileHeight, response.bodyBytes);
+    } else {
+      throw Exception('Failed to load tile at $x, $y, zoom $zoom');
+    }
+  }
+}
+
+

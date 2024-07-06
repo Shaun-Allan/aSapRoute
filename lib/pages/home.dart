@@ -1,13 +1,19 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:route/bloc/bottom_nav_cubit.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:route/model/user_model.dart';
+import 'package:route/services/store_user_model.dart';
 import 'package:route/theme/theme_constraints.dart';
 import 'package:route/pages/route.dart';
 import 'package:route/pages/report.dart';
-import 'package:route/pages/settings.dart';
+import 'package:route/pages/settings.dart' as settings;
 import 'package:google_fonts/google_fonts.dart';
+
+import '../inheritance/data_hub.dart';
 
 
 class Home extends StatefulWidget {
@@ -36,7 +42,7 @@ class _HomeState extends State<Home> {
   final List<Widget> topLevelPages = const [
     Reroute(),
     Report(),
-    Settings(),
+    settings.Settings(),
   ];
 
   final List<String> appBarTitles = [
@@ -49,8 +55,54 @@ class _HomeState extends State<Home> {
     BlocProvider.of<BottomNavCubit>(context).changeSelectedIndex(page);
   }
 
+  Future<UserModel?> fetchUserProfile() async {
+    DocumentSnapshot? userProfileSnapshot;
+    try {
+      // Get current user from FirebaseAuth
+      User? user = FirebaseAuth.instance.currentUser;
+
+      if (user != null) {
+        // Fetch user data from Firestore using user.uid (user ID)
+        DocumentSnapshot snapshot = await FirebaseFirestore.instance.collection("Users").doc(user.uid).get();
+
+        // Update userProfileSnapshot state with fetched data
+        UserModel userModel = UserModel(
+            id: user.uid,
+            Email: snapshot!["Email"],
+            Name: snapshot!["Name"],
+            Password: snapshot!["Password"]
+        );
+        return userModel;
+      } else {
+        print("User not signed in.");
+        // Handle case where user is not signed in
+        return null;
+      }
+
+    } catch (e) {
+      print("Error fetching user profile: $e");
+      // Handle error fetching data
+      return null;
+    }
+  }
+
+
+  void setUserModel() async{
+    final provider = DataInheritance.of(context);
+    UserModel? userModel = await fetchUserProfile();
+    print("\n\n\n\n\n\n\n\n\n\n\n\n\nhello\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
+    print("dsbsbg" + userModel!.Name);
+
+    provider?.setUserModel(userModel!);
+  }
+
+
+
+
   @override
   Widget build(BuildContext context) {
+
+    setUserModel();
     return Scaffold(
       // backgroundColor: Colors.white,
       appBar: _mainWrapperAppBar(),

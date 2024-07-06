@@ -1,34 +1,64 @@
 import 'package:firebase_auth/firebase_auth.dart' hide EmailAuthProvider;
 import 'package:firebase_ui_auth/firebase_ui_auth.dart';
 import 'package:firebase_ui_oauth_google/firebase_ui_oauth_google.dart'; // new
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'dart:async';
+
 import 'package:route/components/sign_in_button.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter_any_logo/flutter_logo.dart';
-
+import 'package:route/pages/email_verification.dart';
 import 'package:route/pages/home.dart';
-import 'package:google_fonts/google_fonts.dart';
-
 import '../pages/sign_in_with_email.dart';
 
-class AuthGate extends StatelessWidget {
+class AuthGate extends StatefulWidget {
   const AuthGate({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
+  _AuthGateState createState() => _AuthGateState();
+}
 
+class _AuthGateState extends State<AuthGate> {
+  late User? _user;
+  late bool _isEmailVerified;
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _user = FirebaseAuth.instance.currentUser;
+    _isEmailVerified = _user?.emailVerified ?? false;
+
+    // Periodically check if the email is verified
+    _timer = Timer.periodic(Duration(seconds: 3), (timer) async {
+      await _user?.reload();
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null && user.emailVerified) {
+        setState(() {
+          _isEmailVerified = true;
+        });
+        _timer?.cancel();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-      statusBarColor: Color.fromARGB(255, 34, 139, 34) // Change status bar color her
+      statusBarColor: Color.fromARGB(255, 34, 139, 34), // Change status bar color here
     ));
 
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
-        if (!snapshot.hasData) {
+        if (!snapshot.hasData || (snapshot.hasData && !snapshot.data!.emailVerified && !_isEmailVerified)) {
           return SafeArea(
             child: Scaffold(
               resizeToAvoidBottomInset: false,
@@ -65,7 +95,7 @@ class AuthGate extends StatelessWidget {
                           textColor: Colors.white,
                           color: Color.fromARGB(255, 59, 89, 152),
                           onPressed: () {
-                            // Implement Google sign-in logic here
+                            // Implement Facebook sign-in logic here
                           },
                           imagePath: 'assets/facebook.png', // Replace with your actual image asset path
                           imageWidth: 60, // Provide desired image width
@@ -77,7 +107,7 @@ class AuthGate extends StatelessWidget {
                           textColor: Colors.white,
                           color: Colors.black,
                           onPressed: () {
-                            // Implement Google sign-in logic here
+                            // Implement Apple sign-in logic here
                           },
                           imagePath: 'assets/apple.png', // Replace with your actual image asset path
                           imageWidth: 60, // Provide desired image width
@@ -149,9 +179,9 @@ class AuthGate extends StatelessWidget {
               ),
             ),
           );
+        } else {
+          return const Home();
         }
-
-        return const Home();
       },
     );
   }
@@ -180,18 +210,3 @@ class AuthGate extends StatelessWidget {
     }
   }
 }
-
-
-
-
-
-
-
-
-
-// return SignInScreen(
-// providers: [
-// EmailAuthProvider(),
-// GoogleProvider(clientId: "789625081686-iou50bc3ojf6gqnn1amrl7caopdlu54c.apps.googleusercontent.com"),  // new
-// ],
-// );

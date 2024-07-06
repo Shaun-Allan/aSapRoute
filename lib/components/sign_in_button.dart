@@ -6,9 +6,9 @@ class SignInButton extends StatelessWidget {
   final Color textColor;
   final Color color;
   final VoidCallback onPressed;
-  final String imagePath;
-  final double imageWidth;
-  final double imageHeight;
+  final String? imagePath;
+  final double? imageWidth;
+  final double? imageHeight;
   final bool centerText;
 
   const SignInButton({
@@ -17,9 +17,9 @@ class SignInButton extends StatelessWidget {
     required this.textColor,
     required this.color,
     required this.onPressed,
-    required this.imagePath,
-    required this.imageWidth,
-    required this.imageHeight,
+    this.imagePath,
+    this.imageWidth,
+    this.imageHeight,
     this.centerText = false,
   }) : super(key: key);
 
@@ -27,7 +27,7 @@ class SignInButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       width: double.infinity,
-      height: 50, // Adjust the height as needed
+      height: 50,
       child: OutlinedButton(
         onPressed: onPressed,
         style: OutlinedButton.styleFrom(
@@ -37,21 +37,28 @@ class SignInButton extends StatelessWidget {
         child: Stack(
           alignment: Alignment.center,
           children: [
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Image.asset(
-                imagePath,
-                width: imageWidth, // Use provided image width
-                height: imageHeight, // Use provided image height
+            if (imagePath != null)
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Image.asset(
+                  imagePath!,
+                  width: imageWidth,
+                  height: imageHeight,
+                ),
               ),
-            ),
-            Text(
-              text,
-              style: GoogleFonts.poppins(
-                color: textColor, // Use provided text color
-                fontSize: 15,
-              ),
-              textAlign: TextAlign.center,
+            Row(
+              mainAxisAlignment: centerText ? MainAxisAlignment.center : MainAxisAlignment.start,
+              children: [
+                if (imagePath != null) SizedBox(width: imageWidth! + 8),
+                Text(
+                  text,
+                  style: GoogleFonts.poppins(
+                    color: textColor,
+                    fontSize: 15,
+                  ),
+                  textAlign: centerText ? TextAlign.center : TextAlign.start,
+                ),
+              ],
             ),
           ],
         ),
