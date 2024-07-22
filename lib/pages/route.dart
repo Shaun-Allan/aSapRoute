@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_sliding_up_panel/flutter_sliding_up_panel.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:route/inheritance/data_hub.dart';
@@ -17,6 +18,8 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:route/services/compass_marker.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:http/http.dart' as http;
+import 'package:sliding_up_panel/sliding_up_panel.dart';
+import 'package:lottie/lottie.dart' as lottie;
 
 
 class Reroute extends StatefulWidget {
@@ -30,8 +33,22 @@ class _RerouteState extends State<Reroute> {
   Completer<GoogleMapController> _controller = Completer();
   final locationController = location.Location();
   List<Marker> _markers = <Marker>[];
+
+
   // Map<PolylineId, Polyline> polylines = {};
-  Set<Polyline> polylines = {};
+  List<Polyline> polylines = [];
+
+  bool calculatingOrgRoute = false;
+  bool calculatedOrgRoute = false;
+  bool calculatingAlternateRoute = false;
+  bool calculatedAlternateRoute = false;
+  bool checkingRouteHasLS = false;
+  bool checkedRouteHasLS = false;
+  bool needAlternateRoute = false;
+  double orgDistance = 0;
+  double alt1Distance = 0;
+
+  Polyline? orgP;
 
   void _openInputPage(BuildContext context) {
     Navigator.push(
@@ -57,7 +74,7 @@ class _RerouteState extends State<Reroute> {
   LatLng? dCo;
   bool altGenerated = false;
   bool clearPolylineBool = false;
-  Set<Polyline>? polylinesg;
+  Set<Polyline>? polylinesg = {};
 
   @override
   void initState() {
@@ -77,16 +94,23 @@ class _RerouteState extends State<Reroute> {
 
   Future<void> makeRoute(sourceCoordinates, destCoordinates) async{
     setState(() {
+      calculatingOrgRoute = true;
+    });
+    setState(() {
       altGenerated = false;
     });
     final coordinates = await fetchPolylinePoints(sourceCoordinates!, destCoordinates!);
+    double polyDist = calculatePolylineDistance(coordinates.first);
+    setState(() {
+      orgDistance = polyDist;
+    });
     await generatePolylineFromPoints(coordinates);
     // await generateRouteWithAvoidance(sourceCoordinates, destCoordinates);
   }
 
 
   void adjustCameraForRoute() async{
-    LatLngBounds bounds = getBoundsForPolylines(polylines);
+    LatLngBounds bounds = getBoundsForPolylines(polylines.toSet());
     final controller = await _controller.future;
     controller.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
   }
@@ -102,7 +126,7 @@ class _RerouteState extends State<Reroute> {
             (x, y, zoom) {
           // Replace with your tile server URL pattern
           zoom = zoom;
-          return 'http://192.168.1.13:8080/'+zoom.toString()+'/'+x.toString()+'/'+y.toString()+'.png';
+          return 'http://192.168.1.6:8080/'+zoom.toString()+'/'+x.toString()+'/'+y.toString()+'.png';
         },
       ),
     );
@@ -138,6 +162,7 @@ class _RerouteState extends State<Reroute> {
 
 
 
+
   @override
   Widget build(BuildContext context) {
     final destString = DataInheritance.of(context)?.coreState.destString;
@@ -147,6 +172,14 @@ class _RerouteState extends State<Reroute> {
     final yourLocationCoordinates = DataInheritance.of(context)?.coreState.yourLocationCoordinates;
     final makeRouteBool = DataInheritance.of(context)?.coreState.makeRoute;
     final clearPolylineB = DataInheritance.of(context)?.coreState.clearPolyline;
+    // final coreStatebool = DataInheritance.of(context)?.coreState;
+
+    setState(() {
+      // coreState = coreStatebool!;
+    });
+
+
+    //
 
     print("asdjbjjhmcclear");
     print(clearPolylineB);
@@ -181,6 +214,12 @@ class _RerouteState extends State<Reroute> {
       //   ),
       // };
     }
+
+    // if(polylines != null && polylines.isNotEmpty){
+    //   polylinesg!.addAll(polylines);
+    //   print("p leng");
+    //   print(polylinesg!.length);
+    // }
 
     if(boundaryPointsg != null){
       int j = 1;
@@ -232,7 +271,7 @@ class _RerouteState extends State<Reroute> {
               zoom: 16,
             ),
             markers: Set<Marker>.of(_markers),
-            polylines: polylines,
+            polylines: polylines.toSet(),
             compassEnabled: true,
             zoomControlsEnabled: false,
             onMapCreated: (GoogleMapController controller) {
@@ -297,21 +336,25 @@ class _RerouteState extends State<Reroute> {
                               children: [
                                 Icon(CupertinoIcons.location_solid, color: Colors.red),
                                 SizedBox(width: 10),
-                                destString != null
-                                    ? Text(
-                                  '$destString',
-                                  style: GoogleFonts.lato(
-                                    fontSize: 17.5,
-                                    fontWeight: FontWeight.w400,
-                                    color: Colors.black,
-                                  ),
-                                )
-                                    : Text(
-                                  'Enter destination',
-                                  style: GoogleFonts.lato(
-                                    fontSize: 17.5,
-                                    fontWeight: FontWeight.w400,
-                                    color: Colors.grey,
+                                Expanded(
+                                  child: destString != null
+                                      ? Text(
+                                    '$destString',
+                                    style: GoogleFonts.lato(
+                                      fontSize: 17.5,
+                                      fontWeight: FontWeight.w400,
+                                      color: Colors.black,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  )
+                                      : Text(
+                                    'Enter destination',
+                                    style: GoogleFonts.lato(
+                                      fontSize: 17.5,
+                                      fontWeight: FontWeight.w400,
+                                      color: Colors.grey,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
                               ],
@@ -323,12 +366,14 @@ class _RerouteState extends State<Reroute> {
                           ),
                         ),
                       ),
-                    ),
+                    )
+
                   ],
                 ),
               ),
             ),
           ),
+          SlidingUpPanelWidget(),
         ],
       ),
       floatingActionButton: FloatingActionButton(
@@ -426,8 +471,8 @@ class _RerouteState extends State<Reroute> {
     }
 
     return LatLngBounds(
-      southwest: LatLng(minLat - 0.6, minLng- 0.6),
-      northeast: LatLng(maxLat + 0.6, maxLng + 0.6),
+      southwest: LatLng(minLat - 0.3, minLng- 0.3),
+      northeast: LatLng(maxLat + 0.3, maxLng + 0.3),
     );
   }
 
@@ -523,9 +568,9 @@ class _RerouteState extends State<Reroute> {
 
 
   Future<void> generatePolylineFromPoints(List<List<LatLng>> polylineCoordinates) async{
-    if(clearPolylineBool || true) {
+    if(clearPolylineBool) {
       setState(() {
-        polylines.clear();
+        // polylines.clear();
         bounded = 0;
       });
     }
@@ -534,6 +579,7 @@ class _RerouteState extends State<Reroute> {
     setClearPolyline(false);
 
     Map<PolylineId, Polyline> polylinesDummy = {};
+
 
     for(int k=0; k<polylineCoordinates.length; k++){
       Polyline polyline = Polyline(
@@ -545,34 +591,48 @@ class _RerouteState extends State<Reroute> {
       print('pid');
       print(pid);
       print(polylines.length);
+      setState(() {
+        for(int i=0; i<polylines.length; i++){
+          polylinesDummy[PolylineId('poly' + i.toString())] = polylines[i];
+        }
+      });
       setState(() => polylinesDummy[PolylineId('polyline' + pid.toString())] = polyline);
       setState(() {
         pid++;
       });
-
     }
+
+
+
+
 
     LatLngBounds boundf = getBounds(polylinesDummy.values);
-    Set<Polyline> pol = {};
-    for(int i=0; i<polylines.length; i++){
-      pol.add(polylines.elementAt(i));
-    }
-    // setState(() {
-    //   polylines = pol;
-    // });
-    for(int i=0; i<polylinesDummy.length; i++){
-      pol.add(polylinesDummy.values.elementAt(i));
-    }
+    Set<Polyline> allPolylines = {...polylines, ...polylinesDummy.values};
 
+
+    if(orgP == null){
+      allPolylines = polylinesDummy.values.toSet();
+    }
+    else{
+      allPolylines = {orgP!, ...polylinesDummy.values};
+    }
 
     setState(() {
-      // for(int i=0; i<polylinesDummy.length; i++){
-      //   polylindes[polylinesDummy[i]!.polylineId] = polylinesDummy[i]!;
-      // }
-      polylines = polylinesDummy.values.toSet();
+      polylines = allPolylines.toList();
+      pid += polylinesDummy.length;
+      orgP = polylines.first;
+      print("poly length");
+      print(polylines.length);
+    });
+
+    setState(() {
+      calculatedOrgRoute = true;
+      calculatingOrgRoute = false;
+      checkingRouteHasLS = true;
     });
 
     LatLngBounds bounds_ = getBoundsForPolylines(polylinesDummy.values);
+    adjustCameraForRoute();
     LatLng northwest = LatLng(bounds_.northeast.latitude, bounds_.southwest.longitude);
     print(northwest);
     LatLng southeast = LatLng(bounds_.southwest.latitude, bounds_.northeast.longitude);
@@ -615,7 +675,11 @@ class _RerouteState extends State<Reroute> {
     for(int i=0; i<polylinesDummy.length; i++){
       if(checkGeoTIFFValues(polylineCoordinates[i], northwestX, northwestY) && !altGenerated){
         setState(() {
-          altGenerated = true;
+          needAlternateRoute = true;
+          calculatingAlternateRoute = true;
+        });
+        setState(() {
+          altGenerated  = true;
         });
         print("yes");
         await generateRouteWithAvoidance(sCo!, dCo!, northwestX, northwestY, polylineCoordinates, boundf);
@@ -626,9 +690,119 @@ class _RerouteState extends State<Reroute> {
       }
     }
 
-    // setState(() {
-    //   polylines.addAll(polylinesDummy);
-    // });
+    setState(() {
+      polylines.addAll(polylinesDummy.values);
+    });
+  }
+
+
+
+
+  Widget SlidingUpPanelWidget() {
+    return SlidingUpPanel(
+      panel: Column(
+        children: [
+          SizedBox(height: 15),
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              color: Color.fromARGB(80, 0, 0, 0),
+            ),
+            height: 4,
+            width: 45,
+          ),
+          Expanded(
+            child: Center(
+              child: _buildPanelContent(),
+            ),
+          ),
+        ],
+      ),
+      minHeight: 100,
+      maxHeight: 300,
+      borderRadius: BorderRadius.vertical(top: Radius.circular(18.0)),
+    );
+  }
+
+
+  Widget _buildPanelContent() {
+    print("Callback triggered");
+    print("Checking route for landslide: $checkingRouteHasLS");
+    print("Checked route for landslide: $checkedRouteHasLS");
+
+    if (calculatingOrgRoute && !calculatedOrgRoute) {
+      // While the original route is being calculated
+      return Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          lottie.Lottie.asset(
+            'assets/route_load.json',
+            width: 250,
+            height: 250,
+          ),
+          Text("Finding Route"),
+        ],
+      );
+    } else if (polylines.isEmpty) {
+      // No route found
+      return Center(child: Text("No route"));
+    } else if (checkingRouteHasLS && !checkedRouteHasLS) {
+      // While checking the route for landslides
+      return Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          lottie.Lottie.asset(
+            'assets/route_load.json',
+            width: 250,
+            height: 250,
+          ),
+          Text("Checking Route for Landslide"),
+        ],
+      );
+    } else if (checkedRouteHasLS) {
+      // When the route has been checked for landslides
+      return Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text("Original Distance: ${orgDistance.toString()}"),
+          if (needAlternateRoute) ...[
+            if (calculatingAlternateRoute && !calculatedAlternateRoute)
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  lottie.Lottie.asset(
+                    'assets/route_load.json',
+                    width: 250,
+                    height: 250,
+                  ),
+                  Text("Finding Alternate Route"),
+                ],
+              )
+            else if (calculatedAlternateRoute)
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text("Original Distance: ${orgDistance.toString()}"),
+                  Text("Alternate Route Distance: ${alt1Distance.toString()}"),
+                ],
+              )
+            else
+              Container(
+                height: 40,
+                width: 40,
+                color: Colors.black,
+              ),
+          ],
+        ],
+      );
+    } else {
+      // Default case when no other conditions are met
+      return Container(
+        height: 40,
+        width: 40,
+        color: Colors.blue,
+      );
+    }
   }
 
 
@@ -683,6 +857,7 @@ class _RerouteState extends State<Reroute> {
     double dLat = _degToRad(point2.latitude - point1.latitude);
     double dLng = _degToRad(point2.longitude - point1.longitude);
 
+
     double a = sin(dLat / 2) * sin(dLat / 2) +
         cos(_degToRad(point1.latitude)) * cos(_degToRad(point2.latitude)) *
             sin(dLng / 2) * sin(dLng / 2);
@@ -691,6 +866,17 @@ class _RerouteState extends State<Reroute> {
     double distance = earthRadius * c;
 
     return distance;
+  }
+
+
+  double calculatePolylineDistance(List<LatLng> polyline) {
+    double totalDistance = 0.0;
+
+    for (int i = 0; i < polyline.length - 1; i++) {
+      totalDistance += _distanceBetween(polyline[i], polyline[i + 1]);
+    }
+
+    return totalDistance;
   }
 
   double _degToRad(double degree) {
@@ -702,8 +888,9 @@ class _RerouteState extends State<Reroute> {
   Future<List<List<LatLng>>> fetchPolylinePointsWithWaypoints(LatLng source, LatLng dest, List<LatLng> waypoints) async {
     PolylinePoints polylinePoints = PolylinePoints();
     // waypoints = [LatLng(13.090280396661807, 80.1698543158802), LatLng(12.87920260782961, 79.74373128272246), LatLng(13.402502834604292, 79.66507824920056)];
-    List<LatLng> fullRoute = [source, ...waypoints, dest];
+    List<LatLng> fullRoute = [source, sCo!, ...waypoints, dest];
     print(fullRoute);
+
 
       // _markers.add(Marker(markerId: MarkerId("123"), position: LatLng(0,0), icon: BitmapDescriptor.defaultMarker));
     // setState(() {
@@ -748,10 +935,24 @@ class _RerouteState extends State<Reroute> {
       }
     }
 
+
+    double alt1D  = 0;
+    for(int i=0; i<polylineCoordinates.length; i++){
+      alt1D += calculatePolylineDistance(polylineCoordinates[i]);
+    }
+    setState(() {
+      alt1Distance = alt1D;
+    });
+
+
+
+
+
+
     return polylineCoordinates;
   }
 
-  List<LatLng> fetchBoundaryPoints(List<List<dynamic>> geotiffData, int pixelWidth, int pixelHeight, int res_x, int res_y, LatLngBounds routeBounds, List<List<LatLng>> pc) {
+  List<LatLng> fetchBoundaryPoints(List<List<dynamic>> geotiffData, int pixelWidth, int pixelHeight, int res_x, int res_y, LatLngBounds routeBounds, List<List<LatLng>> pc, bool east) {
     List<LatLng> boundaryPoints = [];
 
     if (geotiffData.isNotEmpty) {
@@ -768,7 +969,7 @@ class _RerouteState extends State<Reroute> {
           // for(var p in pc){
           //   if(!pc.contains(LatLng(lat, lng))){
           //     continue;
-          //   }
+          //
           // }
 
           if (value > 0.3 && !visited[y_][x_]) {
@@ -801,11 +1002,21 @@ class _RerouteState extends State<Reroute> {
       boundaryPoints = boundarySet.toList();
     }
 
-    boundaryPoints.sort((a, b) => b.longitude.compareTo(a.longitude));
+
+    if(east) {
+      boundaryPoints.sort((a, b) => b.longitude.compareTo(a.longitude));
 
 // Get the top 3 points most to the east
-    List<LatLng> top3EasternPoints = boundaryPoints.take(3).toList();
-    boundaryPoints = top3EasternPoints;
+      List<LatLng> top3EasternPoints = boundaryPoints.take(3).toList();
+      boundaryPoints = top3EasternPoints;
+    }
+    else{
+      boundaryPoints.sort((a, b) => a.longitude.compareTo(b.longitude));
+
+// Get the top 3 points most to the east
+      List<LatLng> top3EasternPoints = boundaryPoints.take(3).toList();
+      boundaryPoints = top3EasternPoints;
+    }
 
     // Print boundary points for debugging
     print("Boundary Points:");
@@ -923,41 +1134,103 @@ class _RerouteState extends State<Reroute> {
 
   }
 
-  // List<LatLng> _floodFill(List<List<dynamic>> data, int x, int y, int pixelWidth, int pixelHeight, double threshold, List<List<bool>> visited) {
-  //   Queue<List<int>> queue = Queue();
-  //   queue.add([x, y]);
-  //   List<LatLng> points = [];
+
+  // List<LatLng> _floodFill(
   //
-  //   while (queue.isNotEmpty) {
-  //     var current = queue.removeFirst();
+  //
+  //     List<List<dynamic>> data,
+  //     int x,
+  //     int y,
+  //     int pixelWidth,
+  //     int pixelHeight,
+  //     double threshold,
+  //     List<List<bool>> visited,
+  //     int res_x,
+  //     int res_y,
+  //     List<List<LatLng>> pc,
+  //     int pH,
+  //     int pW
+  //     ) {
+  //   setState(() {
+  //     calculatingAlternateRoute = true;
+  //   });
+  //   List<List<double>> cluster = List.generate(
+  //       data.length,
+  //           (i) => List.generate(data[i].length, (j) => 0)
+  //   );
+  //   List<LatLng> points = [];
+  //   List<List<int>> directions = [
+  //     [-1, 0], [1, 0], [0, -1], [0, 1],
+  //     [-1, -1], [-1, 1], [1, -1], [1, 1]
+  //   ];
+  //
+  //   List<List<int>> stack = [[x, y]];
+  //
+  //   print('Starting flood fill from ($x, $y)');
+  //
+  //   while (stack.isNotEmpty) {
+  //     List<int> current = stack.removeLast();
   //     int cx = current[0];
   //     int cy = current[1];
   //
-  //     if (cx < 0 || cy < 0 || cx >= pixelWidth || cy >= pixelHeight || visited[cy][cx] || data[cy][cx] == null || data[cy][cx] <= threshold) {
+  //     // Boundary and visited check
+  //     if (cx < 0 || cx >= pixelWidth || cy < 0 || cy >= pixelHeight || visited[cy][cx]) {
+  //       print('Skipping ($cx, $cy): out of bounds or already visited');
   //       continue;
   //     }
   //
+  //     double val = data[cy][cx] ?? 0;
+  //
+  //     // Threshold check
+  //     if (val <= threshold) {
+  //       print('Skipping ($cx, $cy): value $val <= threshold $threshold');
+  //       visited[cy][cx] = true;
+  //       continue;
+  //     }
+  //
+  //     double lat = _getLatitude(cy + res_y, pH.toInt());
+  //     double lng = _getLongitude(cx + res_x, pW.toInt());
+  //
+  //     print('Checking point ($cx, $cy) -> LatLng($lat, $lng)');
+  //
+  //     // Check if latitude and longitude are within specified coordinates
+  //     if (lat < sCo!.latitude || lat > dCo!.latitude || lng < sCo!.longitude || lng > dCo!.longitude) {
+  //       print('Skipping ($cx, $cy): LatLng($lat, $lng) is out of bounds');
+  //       visited[cy][cx] = true;
+  //       continue;
+  //     }
+  //
+  //     // Add valid point to results
+  //     print('Adding point LatLng($lat, $lng) to results');
+  //     points.add(LatLng(lat, lng));
+  //     cluster[cy][cx] = data[cy][cx];
   //     visited[cy][cx] = true;
   //
-  //     double lat = _getLatitude(cy, pixelHeight);
-  //     double lng = _getLongitude(cx, pixelWidth);
-  //     points.add(LatLng(lat, lng));
+  //     // Add neighboring points to stack
+  //     for (var d in directions) {
+  //       int newX = cx + d[0];
+  //       int newY = cy + d[1];
   //
-  //     List<List<int>> directions = [
-  //       [-1, 0], [1, 0], [0, -1], [0, 1],
-  //       [-1, -1], [-1, 1], [1, -1], [1, 1]
-  //     ];
-  //
-  //     for (var dir in directions) {
-  //       int nx = cx + dir[0];
-  //       int ny = cy + dir[1];
-  //       queue.add([nx, ny]);
-  //
+  //       // Ensure new point is within bounds and not visited
+  //       if (newX >= 0 && newX < pixelWidth && newY >= 0 && newY < pixelHeight && !visited[newY][newX]) {
+  //         print('Adding ($newX, $newY) to stack');
+  //         stack.add([newX, newY]);
+  //       }
   //     }
   //   }
   //
+  //   print('Flood fill completed');
+  //   print('Resulting points: $points');
+  //   setState(() {
+  //     calculatingAlternateRoute = false;
+  //     calculatedAlternateRoute = true;
+  //   });
   //   return points;
   // }
+
+
+
+
 
 
   double _getLatitude(int y, int pixelHeight) {
@@ -1040,17 +1313,21 @@ class _RerouteState extends State<Reroute> {
   Future<void> generateRouteWithAvoidance(LatLng source, LatLng dest, int res_x, res_y, List<List<LatLng>> pc, LatLngBounds boundf) async {
     // List<List<dynamic>> relevantClusterData = _identifyRelevantCluster(pc, res_x, res_y);
 
-    List<LatLng> boundaryPoints = await fetchBoundaryPoints(_geotiffData!, pixelWidth.toInt(), pixelHeight.toInt(), res_x, res_y, boundf, pc);
+    List<LatLng> boundaryPoints = await fetchBoundaryPoints(_geotiffData!, pixelWidth.toInt(), pixelHeight.toInt(), res_x, res_y, boundf, pc, true);
+    // List<LatLng> boundaryPoints1 = await fetchBoundaryPoints(_geotiffData!, pixelWidth.toInt(), pixelHeight.toInt(), res_x, res_y, boundf, pc, false);
     print('boundar');
     print(boundaryPoints);
     List<LatLng> waypoints = await generateWaypoints(boundaryPoints, dest, source);
+    // List<LatLng> waypoints1 = await generateWaypoints(boundaryPoints1, dest, source);
     // List<LatLng> waypoints = boundaryPoints;
     print('waypoints');
     print(waypoints);
 
     List<List<LatLng>> polylineCoordinates = await fetchPolylinePointsWithWaypoints(source, dest, waypoints);
+    // List<List<LatLng>> polylineCoordinates1 = await fetchPolylinePointsWithWaypoints(source, dest, waypoints1);
     print('polyline Coordinates');
     print(polylineCoordinates);
+    // await generatePolylineFromPoints(polylineCoordinates1);
     await generatePolylineFromPoints(polylineCoordinates);
   }
 
@@ -1058,6 +1335,11 @@ class _RerouteState extends State<Reroute> {
 
 
   bool checkGeoTIFFValues(List<LatLng> polylineCoordinates, int nwx, int sey) {
+    setState(() {
+      // final provider = DataInheritance.of(context);
+      // provider?.setCheckingRouteHasLS(true);
+      checkingRouteHasLS = true;
+    });
     print(polylineCoordinates.length);
     for (LatLng point in polylineCoordinates) {
       int y = max(_getGeoTIFFIndex(point.latitude, true) - sey - 1, 0) ;
@@ -1074,11 +1356,22 @@ class _RerouteState extends State<Reroute> {
       if ((x >= 0 && x < pixelWidth && y >= 0 && y < pixelHeight) || true ) {
         if(_geotiffData![y][x] != null){
           if(_geotiffData![y][x] > 0.3){
+            setState(() {
+              checkingRouteHasLS = false;
+              checkedRouteHasLS= true;
+            });
             return true;
           }
         }
       }
     }
+    setState(() {
+      // final provider = DataInheritance.of(context);
+      // provider?.setheckingRouteHasLS(false);
+      // checkedRouteHasLS(true);
+      checkingRouteHasLS = false;
+      checkedRouteHasLS = true;
+    });
     return false;
   }
 
