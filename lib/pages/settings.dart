@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:route/pages/settings/my_reports.dart';
 import 'package:route/pages/settings/plans_and_subscriptions.dart';
 import 'package:route/pages/settings/profile.dart';
 
@@ -30,7 +31,24 @@ class _SettingsState extends State<Settings> {
               title: 'My Reports',
               icon: Icon(CupertinoIcons.exclamationmark_octagon, color: Colors.red,),
               onTapFunction: () {
-                // Navigate to profile screen or perform some action
+                Navigator.push(
+                  context,
+                  PageRouteBuilder(
+                    pageBuilder: (context, animation, secondaryAnimation) => UserReportsPage(),
+                    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                      var begin = Offset(1.0, 0.0);
+                      var end = Offset.zero;
+                      var curve = Curves.ease;
+
+                      var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+
+                      return SlideTransition(
+                        position: animation.drive(tween),
+                        child: child,
+                      );
+                    },
+                  ),
+                );
               },
             ),
             SettingTile(
@@ -194,76 +212,81 @@ class _ProfileContentState extends State<ProfileContent> {
         width: double.infinity,
         child: Column(
           children: [
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    spreadRadius: 3,
-                    blurRadius: 5,
-                    offset: Offset(0, 3),
-                  ),
-                ],
-                borderRadius: BorderRadius.circular(10.0),
-              ),
-              padding: EdgeInsets.all(20.0),
-              child: Row(
-                children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                    ),
-                    child: ClipOval(
-                      child: Image(
-                        image: AssetImage("assets/default_profile.jpg"),
-                        height: 60,
-                        width: 60,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: 20.0),
-                  userModel != null
-                      ? Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        userModel.Name,
-                        style: GoogleFonts.poppins(
-                          fontSize: 16.0,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      // SizedBox(height: 5.0),
-                      // Text(
-                      //   userProfileSnapshot!['Email'],
-                      //   style: TextStyle(
-                      //     fontSize: 14.0,
-                      //     color: Colors.grey,
-                      //   ),
-                      //   overflow: TextOverflow.ellipsis,
-                      // ),
-                    ],
-                  )
-                     :  Text(
-                    "Loading...",
-                    style: TextStyle(
-                      fontSize: 16.0,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Spacer(),
-                  Icon(
-                    Icons.arrow_forward_ios,
-                    size: 17.0,
-                    color: Color.fromARGB(30, 0, 0, 0),
-                  ),
-                  SizedBox(width: 20.0),
-                ],
-              ),
+        Container(
+        decoration: BoxDecoration(
+        color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              spreadRadius: 3,
+              blurRadius: 5,
+              offset: Offset(0, 3),
             ),
           ],
+          borderRadius: BorderRadius.circular(10.0),
+        ),
+        margin: EdgeInsets.symmetric(horizontal: 5),
+        padding: EdgeInsets.all(20.0),
+        child: Row(
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+              ),
+              child: ClipOval(
+                child: Image(
+                  image: AssetImage("assets/default_profile.jpg"),
+                  height: 60,
+                  width: 60,
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+            SizedBox(width: 20.0),
+            Expanded(
+              child: userModel != null
+                  ? Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    userModel.Name,
+                    style: GoogleFonts.openSans(
+                      fontSize: 17.0,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  SizedBox(height: 3,),
+                  Text(
+                    userModel.Email,
+                    style: GoogleFonts.lato(
+                      fontSize: 14,
+                      color: Colors.grey,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              )
+                  : Text(
+                "Loading...",
+                style: TextStyle(
+                  fontSize: 16.0,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            SizedBox(width: 10.0),
+            Icon(
+              Icons.arrow_forward_ios,
+              size: 17.0,
+              color: Color.fromARGB(30, 0, 0, 0),
+            ),
+          ],
+        ),
+      )
+      ],
         ),
       ),
     );

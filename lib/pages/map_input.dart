@@ -119,7 +119,7 @@ class _InputPageState extends State<InputPage> {
   }
 
   void getSuggestion(String input) async {
-    String kPLACES_API_KEY = "AIzaSyDFRYFYWQ5Q12KnevFyxKJMgiu7Rui-mF8";
+    String kPLACES_API_KEY = "AIzaSyCYHi0alROcEdEIV97imNAvkSKUEMvI4dA";
     String groundURL = 'https://maps.googleapis.com/maps/api/place/autocomplete/json';
     String request = '$groundURL?input=$input&key=$kPLACES_API_KEY&sessiontoken=$_sessionToken';
 
@@ -148,12 +148,21 @@ class _InputPageState extends State<InputPage> {
   LatLng? destCoordinates;
 
 
+  void setClearPolyline(bool clearPolyline) async{
+    final provider = DataInheritance.of(context);
+
+    provider?.setClearPolyline(clearPolyline);
+  }
+
+
 
   void setCoordinate(LatLng sc, LatLng dc, String ss, String ds, String ddesc) async{
     final provider = DataInheritance.of(context);
 
     provider?.setSource(sc, ss);
     provider?.setDestination(dc, ds);
+
+    setMakeRoute(true);
 
 
     Navigator.pop(context);
@@ -170,6 +179,13 @@ class _InputPageState extends State<InputPage> {
   void setYourLocation(LatLng c) {
     final provider = DataInheritance.of(context);
     provider?.setYourLocation(c);
+  }
+
+  void setMakeRoute(bool makeRoute) async{
+    final provider = DataInheritance.of(context);
+
+    provider?.setMakeRoute(makeRoute);
+    setClearPolyline(true);
   }
 
 
@@ -225,12 +241,18 @@ class _InputPageState extends State<InputPage> {
 
   void getRecents(String uid) async{
     recentlySearched = await recentsRepo.getRecentlySearched(uid!);
+    setState(() {
+      _loadingRecents = false;
+    });
   }
 
   List<FavoriteModel> favorites = [];
 
   void getFavorites(String uid) async{
     favorites = await favRepo.getFavorites(uid);
+    setState(() {
+      _loadingFavorite = false;
+    });
   }
 
   bool showDustbin = false;
@@ -244,6 +266,11 @@ class _InputPageState extends State<InputPage> {
   SlidingUpPanelController panelControllerD = SlidingUpPanelController();
 
   String favDesc = "";
+
+  bool _loadingRecents = true;
+  bool _loadingRecentsFavorites = true;
+  bool _nothingRecents = false;
+  bool _loadingFavorite = true;
 
 
 
@@ -296,8 +323,8 @@ class _InputPageState extends State<InputPage> {
 
 
 
-    
-    
+
+
     final screen = MediaQuery.of(context).size.width;
 
 
@@ -562,7 +589,8 @@ class _InputPageState extends State<InputPage> {
                                         color: Color.fromARGB(180, 0, 0, 0),
                                       ),
                                     ),
-                                    Spacer(), // Spacer to push the button to the end
+                                    Spacer(),
+                                    if(!_loadingFavorite && favorites.length!=0)// Spacer to push the button to the end
                                     GestureDetector(
                                       onTap: () {
                                         // setState(() {
@@ -592,7 +620,7 @@ class _InputPageState extends State<InputPage> {
                                   ],
                                 ),
                                 SizedBox(height: 8),
-                                favorites.length==0
+                                _loadingFavorite
                                     ?
                                 Container(
                                   height: 40,
@@ -630,6 +658,37 @@ class _InputPageState extends State<InputPage> {
                                 )
 
                             :
+                                    favorites.length == 0?
+                                        GestureDetector(
+                                          onTap: (){
+                                            setState(() {
+                                              showAddToFavoritesPanel = true;
+                                            });
+                                            panelController.expand();
+                                          },
+                                          child: Container(
+                                            height: 50,
+                                            width: tileWidth,
+                                            decoration: BoxDecoration(
+                                              border: Border.all(
+                                                color: Color.fromARGB(30, 0, 0, 0), // Outline color
+                                                width: 1, // Outline width
+                                              ),
+                                              color: Colors.white,
+                                              borderRadius: BorderRadius.circular(8),
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: Colors.black.withOpacity(0.1),
+                                                  spreadRadius: 2,
+                                                  blurRadius: 5,
+                                                  offset: Offset(0, 3), // changes position of shadow
+                                                ),
+                                              ],
+                                            ),
+                                            child: Icon(CupertinoIcons.add_circled, color: Color.fromARGB(60, 0, 0, 0),),
+                                          ),
+                                        )
+                                        :
                                 Container(
                                   height: 50,
                                   child: ListView.builder(
@@ -638,6 +697,9 @@ class _InputPageState extends State<InputPage> {
                                     itemBuilder: (context, index) {
                                       final favorite = favorites[index];
                                       return LongPressDraggable<FavoriteModel>(
+                                        onDragCompleted: (){
+                                          Vibrate.feedback(FeedbackType.medium); // Feedback without expecting return
+                                        },
                                         onDragStarted: (){
                                           Vibrate.feedback(FeedbackType.medium); // Feedback without expecting return
                                           setState(() {
@@ -666,6 +728,10 @@ class _InputPageState extends State<InputPage> {
                                             height: 50,
                                             decoration: BoxDecoration(
                                               color: Colors.white,
+                                              border: Border.all(
+                                                color: Color.fromARGB(30, 0, 0, 0), // Outline color
+                                                width: 1, // Outline width
+                                              ),
                                               borderRadius: BorderRadius.circular(8),
                                               boxShadow: [
                                                 BoxShadow(
@@ -694,7 +760,8 @@ class _InputPageState extends State<InputPage> {
                                           opacity: 0.0,
                                           child: buildTile((){}, tileWidth, favorites[index].title),
                                         ),
-                                        child: buildTile((){}, tileWidth, favorites[index].title),
+                                        child: buildTile((){}, tileWidth, favorites[index].title)
+
                                       );
                                     },
                                   ),
@@ -724,7 +791,7 @@ class _InputPageState extends State<InputPage> {
                                         ),
                                       ],
                                     ),
-                                    child: recentlySearched.isEmpty
+                                    child: _loadingRecents
                                         ?
                                     ListView.builder(
                                       padding: EdgeInsets.zero,
@@ -768,6 +835,7 @@ class _InputPageState extends State<InputPage> {
                                       },
                                     )
                                         :
+                                    recentlySearched.isNotEmpty?
                                     ListView.builder(
                                       padding: EdgeInsets.zero, // Ensure no padding around the ListView
                                       itemCount: recentlySearched.length,
@@ -807,7 +875,25 @@ class _InputPageState extends State<InputPage> {
                                           ],
                                         );
                                       },
-                                    ),
+                                    )
+                                        :
+                                    Container(
+                                      width: double.infinity,
+                                      child: Column(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Icon(Icons.route_outlined, color: Color.fromARGB(50, 0, 0, 0), size: 40),
+                                          SizedBox(height: 20,),
+                                          Text(
+                                            "Your recent searches will appear here",
+                                            style: GoogleFonts.lato(
+                                              color: Colors.grey,
+                                            )
+                                          ),
+                                          SizedBox(height: 40,),
+                                        ],
+                                      ),
+                                    )
                                   ),
                                 ),
 
@@ -816,7 +902,7 @@ class _InputPageState extends State<InputPage> {
                             ),
 
                           ),
-                          DeleteDustbin(),
+                  DeleteDustbin(),
 
 
                           if((sourceFocusNode.hasFocus && sourceController.text.isNotEmpty) || (destFocusNode.hasFocus && destController.text.isNotEmpty) )
@@ -1075,23 +1161,54 @@ class _InputPageState extends State<InputPage> {
         });
       },
 
-      child: Container(
-        margin: EdgeInsets.only(top: 400),
-        width: double.infinity,
-        color: Colors.transparent,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: <Widget>[
-            IconButton(
-              icon: Icon(CupertinoIcons.trash_fill, size: 40, color: Colors.red),
-              onPressed: () {
+      child: DragTarget<FavoriteModel>(
+        onWillAccept: (data) {
+          // When the draggable object is dragged over the dustbin
+          Vibrate.feedback(FeedbackType.medium); // Vibration feedback
+          return true; // Accept the drag
+        },
+        onAccept: (data) {
+          print("title");
+          print(data.title);
+            // Perform actions when the object is dropped on the dustbin
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to submit report: ')),
+          );
+          setState(() {
+            // Example action: Hide the dustbin and update state
 
-              },
+          });
+        },
+        builder: (
+            BuildContext context,
+            List<dynamic> accepted,
+            List<dynamic> rejected,
+            ) {
+          return Container(
+            color: Colors.black,
+            width: MediaQuery.of(context).size.width,
+            margin: EdgeInsets.only(top: 400),
+            child: Container(
+              margin: EdgeInsets.only(top: 00),
+              width: double.infinity,
+              color: Colors.transparent,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: <Widget>[
+                  IconButton(
+                    icon: Icon(CupertinoIcons.trash_fill, size: 40, color: Colors.red),
+                    onPressed: () {
+
+                    },
+                  ),
+                ],
+              ),
             ),
-          ],
-        ),
+          );
+        },
+
       ),
     );
   }
@@ -1148,7 +1265,7 @@ class _InputPageState extends State<InputPage> {
 
 
       child: Container(
-        margin: EdgeInsets.only(top: 230),
+        margin: EdgeInsets.only(top: 228),
         decoration: ShapeDecoration(
           color: Colors.white,
           shadows: [
@@ -1339,6 +1456,7 @@ class _InputPageState extends State<InputPage> {
                               final favLocation = LatLng(flocations.first.latitude, flocations.first.longitude);
                               final favModel = FavoriteModel(location: favLocation, locName: favController.text!, title: titleController.text!, desc: favDesc);
                               await favRepo.saveFavorite(uid!, favModel);
+                              getFavorites(uid);
                               print("Added");
                             },
                             icon: Icon(CupertinoIcons.add_circled_solid, size:38,))
@@ -1372,7 +1490,7 @@ class _InputPageState extends State<InputPage> {
                                         ),
                                       ],
                                     ),
-                                    child: recentlySearched.isEmpty
+                                    child: _loadingRecents
                                         ?
                                     ListView.builder(
                                       padding: EdgeInsets.zero,
@@ -1415,6 +1533,25 @@ class _InputPageState extends State<InputPage> {
                                         );
                                       },
                                     )
+                                    :
+                                      (recentlySearched.length == 0)?
+                                      Container(
+                                        width: double.infinity,
+                                        child: Column(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Icon(Icons.route_outlined, color: Color.fromARGB(50, 0, 0, 0), size: 40),
+                                            SizedBox(height: 20,),
+                                            Text(
+                                                "Your recent searches will appear here",
+                                                style: GoogleFonts.lato(
+                                                  color: Colors.grey,
+                                                )
+                                            ),
+                                            SizedBox(height: 40,),
+                                          ],
+                                        ),
+                                      )
                                         :
                                     ListView.builder(
                                       padding: EdgeInsets.zero, // Ensure no padding around the ListView

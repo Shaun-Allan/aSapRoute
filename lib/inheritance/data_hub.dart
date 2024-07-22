@@ -73,6 +73,33 @@ class _DataStateState extends State<DataState> {
   }
 
 
+  void setMakeRoute(bool makeRoute) {
+    final newState = coreState.copy(
+      makeRoute: makeRoute,
+      // yourLocationString: desc,
+    );
+    setState(() {
+      print("inside");
+      coreState = newState;
+    });
+    print("done");
+  }
+
+
+
+  void setClearPolyline(bool clearPolyline) {
+    final newState = coreState.copy(
+      clearPolyline: clearPolyline,
+      // yourLocationString: desc,
+    );
+    setState(() {
+      print("inside");
+      coreState = newState;
+    });
+    print("done");
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return DataInheritance(

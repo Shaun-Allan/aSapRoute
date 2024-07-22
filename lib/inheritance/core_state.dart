@@ -10,6 +10,8 @@ class CoreState {
   final LatLng? yourLocationCoordinates;
   final UserModel? userModel;
   final bool? showDustbin;
+  final bool? makeRoute;
+  final bool? clearPolyline;
   // final String? yourLocationString;
 
   const CoreState({
@@ -20,6 +22,8 @@ class CoreState {
     this.yourLocationCoordinates,
     this.userModel,
     this.showDustbin = false,
+    this.makeRoute,
+    this.clearPolyline,
     // this.yourLocationString,
   });
 
@@ -34,7 +38,9 @@ class CoreState {
         destString == other.destString &&
         yourLocationCoordinates == other.yourLocationCoordinates &&
         userModel == other.userModel &&
-        showDustbin == other.showDustbin;
+        showDustbin == other.showDustbin &&
+        makeRoute == other.makeRoute &&
+        clearPolyline == other.clearPolyline;
         // yourLocationString == other.yourLocationString;
 
   CoreState copy({
@@ -45,6 +51,8 @@ class CoreState {
     LatLng? yourLocationCoordinates,
     UserModel? userModel,
     bool? showDustbin,
+    bool? makeRoute,
+    bool? clearPolyline,
     // String? yourLocationString,
   }) =>
       CoreState(
@@ -55,12 +63,15 @@ class CoreState {
         yourLocationCoordinates: yourLocationCoordinates ?? this.yourLocationCoordinates,
         userModel:  userModel ?? this.userModel,
         showDustbin: showDustbin ?? this.showDustbin,
+        makeRoute: makeRoute ?? this.makeRoute,
+        clearPolyline: clearPolyline ?? this.clearPolyline,
         // yourLocationString: yourLocationString ?? this.yourLocationString
       );
 
   @override
   int get hashCode => sourceString.hashCode ^ destCoordinates.hashCode ^
                       sourceString.hashCode ^ destString.hashCode ^
-                      yourLocationCoordinates.hashCode ^ userModel.hashCode ^ showDustbin.hashCode;
+                      yourLocationCoordinates.hashCode ^ userModel.hashCode ^ showDustbin.hashCode ^ makeRoute.hashCode
+                      ^ clearPolyline.hashCode;
                       // ^ yourLocationString.hashCode;
 }

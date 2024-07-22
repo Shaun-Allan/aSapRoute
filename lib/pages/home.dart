@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:route/bloc/bottom_nav_cubit.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:route/model/user_model.dart';
+import 'package:route/pages/news.dart';
 import 'package:route/services/store_user_model.dart';
 import 'package:route/theme/theme_constraints.dart';
 import 'package:route/pages/route.dart';
@@ -42,12 +43,14 @@ class _HomeState extends State<Home> {
   final List<Widget> topLevelPages = const [
     Reroute(),
     Report(),
+    News(),
     settings.Settings(),
   ];
 
   final List<String> appBarTitles = [
     "aSapRoute",
     "Report",
+    "News",
     "Settings",
   ];
 
@@ -104,6 +107,7 @@ class _HomeState extends State<Home> {
 
     setUserModel();
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       // backgroundColor: Colors.white,
       appBar: _mainWrapperAppBar(),
       body: _mainWrapperBody(),
@@ -185,7 +189,8 @@ class _HomeState extends State<Home> {
         children: [
           _bottomAppBarItem(context, defaultIcon: CupertinoIcons.map, page: 0, label: "Route", filledIcon: CupertinoIcons.map_fill),
           _bottomAppBarItem(context, defaultIcon: CupertinoIcons.exclamationmark_octagon, page: 1, label: "Report", filledIcon: CupertinoIcons.exclamationmark_octagon_fill),
-          _bottomAppBarItem(context, defaultIcon: CupertinoIcons.settings, page: 2, label: "Settings", filledIcon: CupertinoIcons.settings_solid),
+          _bottomAppBarItem(context, defaultIcon: CupertinoIcons.news, page: 2, label: "News", filledIcon: CupertinoIcons.news_solid),
+          _bottomAppBarItem(context, defaultIcon: CupertinoIcons.settings, page: 3, label: "Settings", filledIcon: CupertinoIcons.settings_solid),
         ],
       )
     );
