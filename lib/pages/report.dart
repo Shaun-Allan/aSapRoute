@@ -588,20 +588,24 @@ class _ReportState extends State<Report> {
           time.minute,
         );
 
+        // Get current date and time
+        final DateTime now = DateTime.now();
+
+        // Check if the selected date and time is in the future
+        if (dateTime.isAfter(now)) {
+          // Show error message if the date and time is in the future
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Cannot report a future date and time')),
+          );
+          return; // Prevent form submission
+        }
+
         // Convert DateTime to Timestamp
         final Timestamp timestamp = Timestamp.fromDate(dateTime);
-        final uid = DataInheritance
-            .of(context)
-            ?.coreState
-            .userModel
-            ?.id;
+        final uid = DataInheritance.of(context)?.coreState.userModel?.id;
 
         // Get values from text fields and controllers
         final eventDesc = _descriptionController.text;
-
-        print(location);
-        print("jdjd" + locName.toString());
-
 
         // Construct report data
         ReportModel reportModel = ReportModel(
@@ -622,10 +626,10 @@ class _ReportState extends State<Report> {
             return Center(child: CircularProgressIndicator(color: Color.fromARGB(255, 36, 9, 27)));
           },
         );
-        print('before api call');
+
         // Fetch news based on the event description
         final newsData = await fetchNews(createLocationText(locDesc!, locName!));
-        print(newsData);
+
         // Set valid field based on the response
         bool isValid = newsData.isNotEmpty;
 
@@ -642,7 +646,7 @@ class _ReportState extends State<Report> {
         );
 
         await reportsRepo.saveReport(uid, reportModel);
-        // Pop the loading dialog
+
         // Pop the loading dialog
         if (mounted) { // Check if the widget is still mounted
           Navigator.pop(context);
@@ -653,6 +657,8 @@ class _ReportState extends State<Report> {
             ),
           );
         }
+
+        // Clear form fields
         _locationController.text = "";
         _dateController.text = "";
         _timeController.text = "";
@@ -666,6 +672,7 @@ class _ReportState extends State<Report> {
       }
     }
   }
+
   Future<List<dynamic>> fetchNews(String eventDescription) async {
     final url = 'http://shaunallanh.pythonanywhere.com/get_news';
     print('Fetching news for event description $eventDescription');
