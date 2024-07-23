@@ -7,6 +7,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:route/pages/settings/my_reports.dart';
 import 'package:route/pages/settings/plans_and_subscriptions.dart';
 import 'package:route/pages/settings/profile.dart';
+import 'package:route/pages/settings/awareness.dart';
 
 import '../inheritance/data_hub.dart';
 
@@ -80,6 +81,30 @@ class _SettingsState extends State<Settings> {
               icon: Icon(FontAwesomeIcons.lifeRing, color: Colors.orange,),
               onTapFunction: () {
                 // Navigate to profile screen or perform some action
+              },
+            ),
+            SettingTile(
+              title: 'Learn More',
+              icon: Icon(FontAwesomeIcons.infoCircle, color: Colors.blue,),
+              onTapFunction: () {
+                Navigator.push(
+                  context,
+                  PageRouteBuilder(
+                    pageBuilder: (context, animation, secondaryAnimation) => AwarenessPage(),
+                    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                      var begin = Offset(1.0, 0.0);
+                      var end = Offset.zero;
+                      var curve = Curves.ease;
+
+                      var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+
+                      return SlideTransition(
+                        position: animation.drive(tween),
+                        child: child,
+                      );
+                    },
+                  ),
+                );
               },
             ),
             SettingTile(
