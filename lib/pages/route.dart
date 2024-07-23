@@ -183,6 +183,9 @@ class _RerouteState extends State<Reroute> {
 
   List<LatLng>? boundaryPointsg = [];
 
+  TextEditingController sourceLController = TextEditingController();
+  TextEditingController destLController = TextEditingController();
+
 
 
 
@@ -454,6 +457,8 @@ class _RerouteState extends State<Reroute> {
         return;
       }
     }
+
+
 
     // Get the current location
     final currentLocation = await locationController.getLocation();
@@ -749,23 +754,29 @@ class _RerouteState extends State<Reroute> {
 
   Widget SlidingUpPanelWidget() {
     return SlidingUpPanel(
-      panel: Column(
-        children: [
-          SizedBox(height: 15),
-          Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
-              color: Color.fromARGB(80, 0, 0, 0),
+      panel: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10.0),
+        child: Column(
+          children: [
+            SizedBox(height: 15),
+            Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                color: Color.fromARGB(80, 0, 0, 0),
+              ),
+              height: 4,
+              width: 45,
             ),
-            height: 4,
-            width: 45,
-          ),
-          Expanded(
-            child: Center(
-              child: _buildPanelContent(),
+            Expanded(
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 12.0),
+                  child: _buildPanelContent(),
+                ),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
       minHeight: 100,
       maxHeight: 300,
@@ -820,40 +831,107 @@ class _RerouteState extends State<Reroute> {
         ],
       );
     } else if (polylines.isEmpty) {
-      return Stack(
+      orgDistance = 50;
+      sourceLController.text = 'sjgh';
+      return Column(
         children: [
-          Align(
-            child: ZoomIn(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  lottie.Lottie.asset(
-                    'assets/route_load.json',
-                    width: 250,
-                    height: 250,
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+            decoration: BoxDecoration(
+              color: Colors.blueGrey[50], // Bluish-grey background
+              borderRadius: BorderRadius.circular(50), // Rounded borders
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(left: 10.0),
+                  child: Text("Source", style: GoogleFonts.lato(fontSize: 12, color: Colors.grey)),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(left: 10.0),
+                  child: Text(
+                    "Sourxkbxcvjhdfbjhfjkdfhgdfbhfdkbhce",
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.openSans(fontSize: 14, fontWeight: FontWeight.w500),
                   ),
-                  SizedBox(height: 60,)
-                ],
-              ),
+                ),
+              ],
             ),
           ),
-          Align(
-            alignment: Alignment.center,
-            child: FadeInDown(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  SizedBox(height: 150),
-                  Text(
-                    "Finding Route...",
-                    style: GoogleFonts.poppins(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.green,
-                    ),
-                  ),
-                ],
+
+          SizedBox(height: 10),
+
+          Row(
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 5.0),
+                child: Icon(CupertinoIcons.arrow_right_circle, size: 35),
               ),
+              Expanded(
+                child: Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+                  decoration: BoxDecoration(
+                    color: Colors.blueGrey[50], // Bluish-grey background
+                    borderRadius: BorderRadius.circular(50), // Rounded borders
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(left: 10.0),
+                        child: Text("Destination", style: GoogleFonts.lato(fontSize: 12, color: Colors.grey)),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 10.0),
+                        child: Text(
+                          "Sourxkbxcvjhdfbjhfjkdfhgdfbhfdkbhce",
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.openSans(fontSize: 14, fontWeight: FontWeight.w500),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          SizedBox(height: 10),
+
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.green, width: 2), // Green outline
+              borderRadius: BorderRadius.circular(50),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  "No landslide hazard on that route",
+                  style: GoogleFonts.openSans(
+                    fontSize: 14,
+                    color: Colors.green, // Green text
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                Icon(CupertinoIcons.check_mark_circled_solid, color: Colors.green),
+              ],
+            ),
+          ),
+          SizedBox(height: 10),
+          Text(
+            "Original distance: 15 km", // Replace with actual distance
+            style: GoogleFonts.openSans(
+              fontSize: 12,
+              color: Colors.black,
             ),
           ),
         ],
