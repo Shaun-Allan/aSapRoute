@@ -541,7 +541,7 @@ class _RerouteState extends State<Reroute> {
 
     return LatLngBounds(
       southwest: LatLng(minLat - 0.6, minLng- 0.6),
-      northeast: LatLng(maxLat + 0.6, maxLng + 0.6),
+      northeast: LatLng(maxLat + 0.1, maxLng + 0.6),
     );
   }
 
@@ -1565,18 +1565,34 @@ class _RerouteState extends State<Reroute> {
       boundaryPointsEast = boundarySet.toList();
       boundaryPointsWest = boundarySet.toList();
     }
+    List<LatLng> top3EasternPoints = [];
+    List<LatLng> top3WesternPoints = [];
+
+  if((sCo!.latitude - dCo!.latitude).abs() < (sCo!.longitude - dCo!.longitude)){
+    boundaryPointsEast.sort((a, b) => b.latitude.compareTo(a.latitude));
+    top3EasternPoints = boundaryPointsEast.take(3).toList();
+
+// Get the top 3 points most to the east
 
 
-
-      boundaryPointsEast.sort((a, b) => b.longitude.compareTo(a.longitude));
-    List<LatLng> top3EasternPoints = boundaryPointsEast.take(3).toList();
+// Get the top 3 points most to the east
+    boundaryPointsWest.sort((a, b) => a.latitude.compareTo(b.latitude));
+    top3WesternPoints = boundaryPointsWest.take(3).toList();
+  }
+  else{
+    boundaryPointsEast.sort((a, b) => b.longitude.compareTo(a.longitude));
+    top3EasternPoints = boundaryPointsEast.take(3).toList();
 
 // Get the top 3 points most to the east
 
 
 // Get the top 3 points most to the east
     boundaryPointsWest.sort((a, b) => a.longitude.compareTo(b.longitude));
-      List<LatLng> top3WesternPoints = boundaryPointsWest.take(3).toList();
+    top3WesternPoints = boundaryPointsWest.take(3).toList();
+  }
+
+
+
 
       boundaryPoints = [top3WesternPoints, top3EasternPoints];
     // Print boundary points for debugging
