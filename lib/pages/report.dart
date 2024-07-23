@@ -643,12 +643,13 @@ class _ReportState extends State<Report> {
 
         await reportsRepo.saveReport(uid, reportModel);
         // Pop the loading dialog
+        // Pop the loading dialog
         if (mounted) { // Check if the widget is still mounted
           Navigator.pop(context);
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => NewsList(data: newsData),
+              builder: (context) => ReportSuccess(), // Redirect to ReportSuccess page
             ),
           );
         }
