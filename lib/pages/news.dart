@@ -171,8 +171,10 @@ class _NewsState extends State<News> {
     });
 
     String text = _controller.text;
+    print(text);
     var response = await http.post(
-      Uri.parse('http://shaunallanh.pythonanywhere.com/get_news'),
+      Uri.parse('http://samyuktaa2417.pythonanywhere.com/get_news_full'),
+
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
       },
