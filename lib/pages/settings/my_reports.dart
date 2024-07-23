@@ -216,7 +216,6 @@ class _UserReportsPageState extends State<UserReportsPage> {
     );
   }
 }
-
 class ReportDetailsPage extends StatelessWidget {
   final ReportModel report;
 
@@ -229,7 +228,7 @@ class ReportDetailsPage extends StatelessWidget {
         title: Text('Report Details', style: GoogleFonts.poppins(color: Colors.black)),
         backgroundColor: Colors.white,
       ),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
