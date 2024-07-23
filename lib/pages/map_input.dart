@@ -162,6 +162,8 @@ class _InputPageState extends State<InputPage> {
     provider?.setSource(sc, ss);
     provider?.setDestination(dc, ds);
 
+    setBooleans();
+
     setMakeRoute(true);
 
 
@@ -179,6 +181,17 @@ class _InputPageState extends State<InputPage> {
   void setYourLocation(LatLng c) {
     final provider = DataInheritance.of(context);
     provider?.setYourLocation(c);
+  }
+
+  void setBooleans() {
+    // final provider = DataInheritance.of(context);
+    // provider?.setCalculatedAlternateRoute(false);
+    // provider?.setCalculatingAlternateRoute(false);
+    // provider?.setCalculatedOrgRoute(false);
+    // provider?.setCalculatingOrgRoute(false);
+    // provider?.setCheckedRouteHasLS(false);
+    // provider?.setCheckingRouteHasLS(true);
+    // provider?.setNeedAlternateRoute(false);
   }
 
   void setMakeRoute(bool makeRoute) async{
