@@ -11,6 +11,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:route/components/sign_in_button.dart';
 import 'package:route/model/report_model.dart';
+import 'package:route/pages/news_list.dart';
 import 'package:route/pages/report_success.dart';
 import 'package:route/services/report_repository.dart';
 import 'package:shimmer/shimmer.dart';
@@ -155,13 +156,19 @@ class _ReportState extends State<Report> {
   final TextEditingController iconController = TextEditingController();
   CauseLabel selectedCause = CauseLabel.HeavyRainfall;
   LatLng? location;
-  String? locName;
-  String? locDesc;
+  String? locName = '';
+  String? locDesc = '';
 
   void _updateCharCount(String text) {
     setState(() {});
   }
 
+  String createLocationText(String locDesc, String locName) {
+    List<String> locParts = locDesc.split(', ');
+    locParts.removeLast(); // Remove the last item ("India")
+    String cleanedLocDesc = locParts.join(' '); // Join the remaining items with a space
+    return '$locName $cleanedLocDesc $locName';
+  }
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -600,8 +607,8 @@ class _ReportState extends State<Report> {
         ReportModel reportModel = ReportModel(
           uid: uid!,
           location: location!,
-          locName: locName!,
-          locDesc: locDesc!,
+          locName: locName ?? '',
+          locDesc: locDesc ?? '',
           timestamp: timestamp,
           cause: selectedCause.name,
           eventDesc: eventDesc,
@@ -615,20 +622,36 @@ class _ReportState extends State<Report> {
             return Center(child: CircularProgressIndicator(color: Color.fromARGB(255, 36, 9, 27)));
           },
         );
-        await reportsRepo.saveReport(uid, reportModel);
-        Navigator.pop(context);
+        print('before api call');
+        // Fetch news based on the event description
+        final newsData = await fetchNews(createLocationText(locDesc!, locName!));
+        print(newsData);
+        // Set valid field based on the response
+        bool isValid = newsData.isNotEmpty;
 
-        // Show success message or navigate to another screen
-        Navigator.push(
-          context,
-          PageRouteBuilder(
-            transitionDuration: Duration(milliseconds: 200), // Set the duration of the transition
-            pageBuilder: (context, animation, secondaryAnimation) => FadeTransition(
-              opacity: animation,
-              child: ReportSuccess(),
-            ),
-          ),
+        // Update report model with valid field
+        reportModel = ReportModel(
+          uid: uid!,
+          location: location!,
+          locName: locName ?? '',
+          locDesc: locDesc ?? '',
+          timestamp: timestamp,
+          cause: selectedCause.name,
+          eventDesc: eventDesc,
+          valid: isValid, // Set valid field
         );
+
+        await reportsRepo.saveReport(uid, reportModel);
+        // Pop the loading dialog
+        if (mounted) { // Check if the widget is still mounted
+          Navigator.pop(context);
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => NewsList(data: newsData),
+            ),
+          );
+        }
         _locationController.text = "";
         _dateController.text = "";
         _timeController.text = "";
@@ -642,6 +665,30 @@ class _ReportState extends State<Report> {
       }
     }
   }
+  Future<List<dynamic>> fetchNews(String eventDescription) async {
+    final url = 'http://shaunallanh.pythonanywhere.com/get_news';
+    print('Fetching news for event description $eventDescription');
+    final response = await http.post(
+      Uri.parse('http://shaunallanh.pythonanywhere.com/get_news'),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      body: jsonEncode(<String, String>{
+        'text': eventDescription,
+      }),
+    );
+    print(response.statusCode);
+    if (response.statusCode == 200) {
+      try {
+        return jsonDecode(response.body) as List<dynamic>;
+      } catch (e) {
+        throw Exception('Failed to parse news data');
+      }
+    } else {
+      throw Exception('Failed to load news');
+    }
+    }
+  }
 
 
-}
+

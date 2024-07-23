@@ -11,6 +11,8 @@ class ReportModel {
   final String cause;
   final String eventDesc;
   GeoFirePoint? geoFirePoint;
+  final bool valid; // New field
+
 
   ReportModel({
     required this.uid,
@@ -20,6 +22,7 @@ class ReportModel {
     required this.timestamp,
     required this.cause,
     required this.eventDesc,
+    this.valid = false,
   }) {
     geoFirePoint = GeoFirePoint(GeoPoint(location.latitude, location.longitude));
   }
@@ -36,6 +39,7 @@ class ReportModel {
       cause: data['cause'],
       timestamp: data['timestamp'],
       eventDesc: data['eventDesc'],
+      valid: data['valid'] ?? false,
     );
   }
 
@@ -48,6 +52,7 @@ class ReportModel {
       "cause": cause,
       "eventDesc": eventDesc,
       "timestamp": timestamp,
+      "valid": valid,
     };
   }
 }
