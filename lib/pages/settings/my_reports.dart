@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:route/pages/settings/report_details.dart';
+import 'package:intl/intl.dart';
 import 'package:route/services/report_repository.dart';
 import 'package:shimmer/shimmer.dart';
 
@@ -48,7 +48,7 @@ class _UserReportsPageState extends State<UserReportsPage> {
       body: Padding(
         padding: const EdgeInsets.all(12.0),
         child: isLoading
-            ? _buildLoadingIndicator()  // Show shimmer loading indicator
+            ? _buildLoadingIndicator() // Show shimmer loading indicator
             : reports.isEmpty
             ? Center(child: Text('No reports found'))
             : ListView.builder(
@@ -56,16 +56,63 @@ class _UserReportsPageState extends State<UserReportsPage> {
           itemBuilder: (context, index) {
             ReportModel report = reports[index];
             return Container(
-              width: double.infinity,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(child: ReportTile(report: report)),
-                    ],
+              margin: const EdgeInsets.only(bottom: 12.0),
+              padding: const EdgeInsets.all(12.0),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12.0),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 10.0,
+                    offset: Offset(0, 5),
                   ),
-                  SizedBox(height: 8,)
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ListTile(
+                    title: Text(report.locDesc, style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w600)),
+                    subtitle: Text(
+                      '${DateFormat.yMMMd().format(report.timestamp.toDate())} at ${DateFormat.Hm().format(report.timestamp.toDate())}',
+                      style: GoogleFonts.poppins(color: Colors.grey[600]),
+                    ),
+                    leading: Icon(
+                      report.valid ? Icons.verified : Icons.warning,
+                      color: report.valid ? Colors.green : Colors.red,
+                    ),
+                    trailing: Icon(Icons.arrow_forward_ios, color: Colors.grey, size: 16.0),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ReportDetailsPage(report: report),
+                        ),
+                      );
+                    },
+                  ),
+                  Divider(color: Colors.grey[300]),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: Row(
+                      children: [
+                        Icon(Icons.location_pin, color: Colors.red, size: 20.0),
+                        SizedBox(width: 8.0),
+                        Text(report.locName, style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w500)),
+                      ],
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4.0),
+                    child: Row(
+                      children: [
+                        Icon(Icons.description, color: Colors.blue, size: 20.0),
+                        SizedBox(width: 8.0),
+                        Expanded(child: Text(report.eventDesc, style: GoogleFonts.poppins(fontSize: 16))),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             );
@@ -168,7 +215,90 @@ class _UserReportsPageState extends State<UserReportsPage> {
       },
     );
   }
+}
 
+class ReportDetailsPage extends StatelessWidget {
+  final ReportModel report;
 
+  const ReportDetailsPage({required this.report, super.key});
 
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Report Details', style: GoogleFonts.poppins(color: Colors.black)),
+        backgroundColor: Colors.white,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildCard(
+              icon: Icons.description,
+              iconColor: Colors.blue,
+              title: 'Event Description',
+              content: report.eventDesc,
+            ),
+            SizedBox(height: 16.0),
+            _buildCard(
+              icon: Icons.calendar_today,
+              iconColor: Colors.grey,
+              title: 'Date',
+              content: DateFormat.yMMMMd().format(report.timestamp.toDate()),
+            ),
+            SizedBox(height: 16.0),
+            _buildCard(
+              icon: Icons.access_time,
+              iconColor: Colors.grey,
+              title: 'Time',
+              content: DateFormat.Hm().format(report.timestamp.toDate()),
+            ),
+            SizedBox(height: 16.0),
+            _buildCard(
+              icon: Icons.location_pin,
+              iconColor: Colors.red,
+              title: 'Location Name',
+              content: report.locName,
+            ),
+            SizedBox(height: 16.0),
+            _buildCard(
+              icon: Icons.place,
+              iconColor: Colors.green,
+              title: 'Location Description',
+              content: report.locDesc,
+            ),
+            SizedBox(height: 16.0),
+            _buildCard(
+              icon: Icons.info,
+              iconColor: Colors.green,
+              title: 'Cause',
+              content: report.cause,
+            ),
+            SizedBox(height: 16.0),
+            _buildCard(
+              icon: Icons.map,
+              iconColor: Colors.purple,
+              title: 'Coordinates',
+              content: '${report.location.latitude}, ${report.location.longitude}',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCard({required IconData icon, required Color iconColor, required String title, required String content}) {
+    return Card(
+      elevation: 2.0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12.0),
+      ),
+      child: ListTile(
+        leading: Icon(icon, color: iconColor, size: 30.0),
+        title: Text(title, style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold)),
+        subtitle: Text(content, style: GoogleFonts.poppins(fontSize: 14)),
+      ),
+    );
+  }
 }
