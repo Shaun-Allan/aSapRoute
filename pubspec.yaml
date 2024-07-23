@@ -67,6 +67,7 @@ dependencies:
   flutter_native_splash: ^2.0.0
   sliding_up_panel: ^2.0.0+1
   lottie: ^3.1.2
+  animate_do: ^3.3.4
 
 
 dev_dependencies:
