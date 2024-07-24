@@ -32,28 +32,39 @@ class _ResourcePageState extends State<ResourcePage> {
   void _fetchResources() async {
     try {
       final snapshot = await _databaseReference.get();
+
       if (snapshot.value == null) {
-        print('No data found in Firebase.');
+        print('No data available');
+        setState(() {
+          _resources = [];
+          _filteredResources = [];
+        });
         return;
       }
 
-      final data = snapshot.value as Map<dynamic, dynamic>?;
-      if (data == null) {
-        print('Data is null.');
-        return;
-      }
+      // Use safe casting to handle unexpected types
+      final data = Map<String, dynamic>.from(
+        snapshot.value as Map<dynamic, dynamic>? ?? {},
+      );
 
       final resources = <Map<String, dynamic>>[];
-
       data.forEach((key, value) {
-        print('Data key: $key, value: $value');
-        final sheet = (value as Map<dynamic, dynamic>)['Sheet1'] as List<dynamic>? ?? [];
+        print('Processing key: $key'); // Debugging statement
+        final sheet = value['Sheet1'] ?? [];
         for (var item in sheet) {
-          final resource = Map<String, dynamic>.from(item as Map<dynamic, dynamic>);
+          try {
+            print('Processing item: $item'); // Debugging statement
+            final resource = Map<String, dynamic>.from(item);
 
-          // Filter out resources where essential fields are empty or S NO is missing
-          if (_isValidResource(resource)) {
-            resources.add(resource);
+            // Filter out resources where essential fields are empty or S NO is missing
+            if (_isValidResource(resource)) {
+              resources.add(resource);
+            } else {
+              print('Invalid resource: $resource'); // Debugging statement
+            }
+          } catch (e) {
+            print('Error processing item: $item'); // Debugging statement
+            print('Exception: $e'); // Debugging statement
           }
         }
       });
@@ -64,6 +75,10 @@ class _ResourcePageState extends State<ResourcePage> {
       });
     } catch (error) {
       print('Error fetching data: $error');
+      setState(() {
+        _resources = [];
+        _filteredResources = [];
+      });
     }
   }
 
@@ -114,7 +129,12 @@ class _ResourcePageState extends State<ResourcePage> {
             SizedBox(height: 10.0),
             Expanded(
               child: _filteredResources.isEmpty
-                  ? Center(child: Text('No resources found', style: GoogleFonts.lato(fontSize: 16.0, color: Colors.grey)))
+                  ? Center(
+                child: Text(
+                  'No resources found',
+                  style: GoogleFonts.lato(fontSize: 16.0, color: Colors.grey),
+                ),
+              )
                   : ListView.builder(
                 itemCount: _filteredResources.length,
                 itemBuilder: (context, index) {
