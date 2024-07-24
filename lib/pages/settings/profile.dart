@@ -10,7 +10,6 @@ class ProfilePage extends StatefulWidget {
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
-
 }
 
 class _ProfilePageState extends State<ProfilePage> {
@@ -43,80 +42,81 @@ class _ProfilePageState extends State<ProfilePage> {
         ),
         backgroundColor: Colors.white,
       ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              children: [
-                SizedBox(height: 00,),
-                // Profile Pic and Name
-                        Container(
-                padding: EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(15),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.5),
-                      spreadRadius: 2,
-                      blurRadius: 7,
-                      offset: Offset(0, 3), // changes position of shadow
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(width: 1, color: Colors.black),
-                      ),
-                      child: ClipOval(
-                        child: Image.asset(
-                          "assets/default_profile.jpg",
-                          height: 60,
-                          width: 60,
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                    ),
-                    SizedBox(width: 25),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          userName,
-                          style: GoogleFonts.openSans(fontSize: 20, fontWeight: FontWeight.w500),
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                children: [
+                  SizedBox(height: 0,),
+                  // Profile Pic and Name
+                  Container(
+                    padding: EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(15),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(0.5),
+                          spreadRadius: 2,
+                          blurRadius: 7,
+                          offset: Offset(0, 3), // changes position of shadow
                         ),
                       ],
                     ),
-                  ],
-                ),
+                    child: Row(
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(width: 1, color: Colors.black),
+                          ),
+                          child: ClipOval(
+                            child: Image.asset(
+                              "assets/default_profile.jpg",
+                              height: 60,
+                              width: 60,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
                         ),
-
-                        SizedBox(height: 40),
-                // Other Details
-                _buildDetailRow(userEmail, "Email"),
-                SizedBox(height: 25),
-                _buildDetailRow(userGender, "Gender"),
-                SizedBox(height: 25),
-                _buildDetailRow(userPhoneNumber, "Phone Number"),
-                SizedBox(height: 30),
-                ElevatedButton(
-                  onPressed: () {
-                    // Implement sign out functionality here
-                    // Example: FirebaseAuth.instance.signsOut();
-                  },
-                  child: Text('Sign Out'),
-                ),
-              ],
+                        SizedBox(width: 25),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              userName,
+                              style: GoogleFonts.openSans(fontSize: 20, fontWeight: FontWeight.w500),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 40),
+                  // Other Details
+                  _buildDetailRow(userEmail, "Email"),
+                  SizedBox(height: 25),
+                  _buildDetailRow(userGender, "Gender"),
+                  SizedBox(height: 25),
+                  _buildDetailRow(userPhoneNumber, "Phone Number"),
+                  SizedBox(height: 30),
+                  ElevatedButton(
+                    onPressed: () {
+                      // Implement sign out functionality here
+                      // Example: FirebaseAuth.instance.signsOut();
+                    },
+                    child: Text('Sign Out'),
+                  ),
+                ],
+              ),
             ),
-          ),
-          if(editPanelGenerated)
-            AddFavPanel(),
-        ],
+            if(editPanelGenerated)
+              AddFavPanel(),
+          ],
+        ),
       ),
     );
   }
@@ -167,9 +167,6 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-
-
-
   Widget AddFavPanel() {
     final screen = MediaQuery.of(context).size.height;
     return SlidingUpPanelWidget(
@@ -204,12 +201,6 @@ class _ProfilePageState extends State<ProfilePage> {
           showEditPanel = false;
         });
       },
-
-
-
-
-
-
       child: Container(
         margin: EdgeInsets.only(top: 0),
         decoration: ShapeDecoration(
@@ -258,14 +249,10 @@ class _ProfilePageState extends State<ProfilePage> {
                       ),
                     ),
                     SizedBox(height: 20,),
-
-
-
                   ],
                 ),
               ),
             ),
-
           ],
         ),
       ),
