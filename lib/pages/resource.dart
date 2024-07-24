@@ -32,13 +32,24 @@ class _ResourcePageState extends State<ResourcePage> {
   void _fetchResources() async {
     try {
       final snapshot = await _databaseReference.get();
-      final data = Map<String, dynamic>.from(snapshot.value as Map);
+      if (snapshot.value == null) {
+        print('No data found in Firebase.');
+        return;
+      }
+
+      final data = snapshot.value as Map<dynamic, dynamic>?;
+      if (data == null) {
+        print('Data is null.');
+        return;
+      }
+
       final resources = <Map<String, dynamic>>[];
 
       data.forEach((key, value) {
-        final sheet = value['Sheet1'] ?? [];
+        print('Data key: $key, value: $value');
+        final sheet = (value as Map<dynamic, dynamic>)['Sheet1'] as List<dynamic>? ?? [];
         for (var item in sheet) {
-          final resource = Map<String, dynamic>.from(item);
+          final resource = Map<String, dynamic>.from(item as Map<dynamic, dynamic>);
 
           // Filter out resources where essential fields are empty or S NO is missing
           if (_isValidResource(resource)) {
