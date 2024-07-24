@@ -6,6 +6,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_sliding_up_panel/flutter_sliding_up_panel.dart';
 import 'package:geocoding/geocoding.dart';
+import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:route/inheritance/data_hub.dart';
 import 'package:route/inheritance/core_state.dart';
@@ -21,6 +22,11 @@ import 'package:http/http.dart' as http;
 import 'package:sliding_up_panel/sliding_up_panel.dart';
 import 'package:lottie/lottie.dart' as lottie;
 import 'package:animate_do/animate_do.dart';
+import 'package:custom_info_window/custom_info_window.dart';
+import 'package:route/services/report_repository.dart';
+import 'package:intl/intl.dart';
+
+import '../model/report_model.dart';
 
 
 class Reroute extends StatefulWidget {
@@ -33,9 +39,15 @@ class Reroute extends StatefulWidget {
 class _RerouteState extends State<Reroute> {
   PanelController su = PanelController();
   Completer<GoogleMapController> _controller = Completer();
+  final _customInfoWindowController = CustomInfoWindowController();
+  final _reportController = CustomInfoWindowController();
   final locationController = location.Location();
   List<Marker> _markers = <Marker>[];
+  List<Marker> reportMarkers = <Marker>[];
+  List<Marker> invalidMarkers = <Marker>[];
   bool _searchedFirst = false;
+
+  final _reportsRepository = Get.put(ReportsRepository());
 
 
   // Map<PolylineId, Polyline> polylines = {};
@@ -90,6 +102,7 @@ class _RerouteState extends State<Reroute> {
   @override
   void initState() {
     super.initState();
+    init = 0;
     bounded = 0;
 
     WidgetsBinding.instance.addPostFrameCallback((_) async => await fetchLocationUpdates());
@@ -101,6 +114,96 @@ class _RerouteState extends State<Reroute> {
 
     provider?.setClearPolyline(clearPolyline);
   }
+
+
+
+  Future<List<Marker>> getReports() async {
+    try {
+      List<ReportModel> reports = await _reportsRepository.getReports();
+      print("repor mofels");
+      print(reports.length);
+      BitmapDescriptor customIcon = await _createCustomMarkerBitmap();
+      return reports.map((report) {
+        DateTime dateTime = report.timestamp.toDate();
+
+        // Format the date and time
+        String formattedDate = DateFormat('yyyy-MM-dd HH:mm:ss').format(dateTime);
+        return Marker(
+          markerId: MarkerId(report.uid),
+          position: LatLng(report.location.latitude, report.location.longitude),
+          icon: customIcon, // Use the custom icon
+            onTap: (){
+              _reportController.addInfoWindow!(
+                Center(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12.0), // Adjust the radius as needed\
+                      color: Colors.white,
+                      border: Border.all(
+                        color: Colors.black, // Border color
+                        width: 1.0, // Border width
+                      ),
+                    ),
+                    padding: EdgeInsets.all(8.0), // Adjust padding as needed
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                            report.locName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.lato(fontSize: 15, fontWeight: FontWeight.bold),
+                        ),
+                      SizedBox(height: 10,),
+                        Text(
+                          "Landslide Occured At",
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.lato(),
+                        ),
+                      Text(
+                        formattedDate,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.lato(fontSize: 14),
+                      ),
+                        SizedBox(height: 10,),
+                        Text(
+                            report.eventDesc,
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.lato()
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                LatLng(report.location.latitude, report.location.longitude),
+              );
+            }
+        );
+      }).toList();
+    } catch (e) {
+      print("Error fetching reports: $e");
+      return [];
+    }
+  }
+
+  Future<BitmapDescriptor> _createCustomMarkerBitmap() async {
+    return await BitmapDescriptor.fromAssetImage(
+      ImageConfiguration.empty,
+      'assets/report_icon.png', // Path to your custom icon
+    );
+  }
+
+  Future<BitmapDescriptor> _createCustomMarkerBitmapInvalid() async {
+    return await BitmapDescriptor.fromAssetImage(
+      ImageConfiguration.empty,
+      'assets/invalid.png', // Path to your custom icon
+    );
+  }
+
+  int init = 0;
 
 
   Future<void> makeRoute(sourceCoordinates, destCoordinates) async{
@@ -132,6 +235,9 @@ class _RerouteState extends State<Reroute> {
       orgDistance = polyDist;
     });
     await generatePolylineFromPoints(coordinates, null);
+    setState(() {
+      init = 0;
+    });
     // await generateRouteWithAvoidance(sourceCoordinates, destCoordinates);
   }
 
@@ -153,7 +259,7 @@ class _RerouteState extends State<Reroute> {
             (x, y, zoom) {
           // Replace with your tile server URL pattern
           zoom = zoom;
-          return 'http://192.168.1.6:8080/'+zoom.toString()+'/'+x.toString()+'/'+y.toString()+'.png';
+          return 'http://192.168.1.2:8080/'+zoom.toString()+'/'+x.toString()+'/'+y.toString()+'.png';
         },
       ),
     );
@@ -196,6 +302,19 @@ class _RerouteState extends State<Reroute> {
   String? sourceS;
   String? destS;
 
+  Future<void> _loadMarkers() async {
+    if (init == 0) {
+      List<Marker> reportM = await getReports();
+      setState(() {
+        reportMarkers = reportM;
+        _markers.addAll(reportM);
+        init = 1;
+      });
+      print("Markers Loaded:");
+      print(reportM.length);
+    }
+  }
+
 
 
 
@@ -210,6 +329,10 @@ class _RerouteState extends State<Reroute> {
     final makeRouteBool = DataInheritance.of(context)?.coreState.makeRoute;
     final clearPolylineB = DataInheritance.of(context)?.coreState.clearPolyline;
     // final coreStatebool = DataInheritance.of(context)?.coreState;
+
+    _loadMarkers();
+    print("dfljhfdshgr");
+    print(_markers.length);
 
     setState(() {
       if(sourceString!=null){
@@ -260,8 +383,68 @@ class _RerouteState extends State<Reroute> {
         dCo = destCoordinates;
       });
       _markers = <Marker>[
-        Marker(markerId: MarkerId('source'), position: sourceCoordinates, icon: BitmapDescriptor.defaultMarker),
-        Marker(markerId: MarkerId('destination'), position: destCoordinates, icon: BitmapDescriptor.defaultMarker),
+        ...invalidMarkers,
+        ...reportMarkers,
+        Marker(
+            markerId: MarkerId('source'),
+            position: sourceCoordinates,
+            icon: BitmapDescriptor.defaultMarker,
+            onTap: (){
+              _customInfoWindowController.addInfoWindow!(
+                Center(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12.0), // Adjust the radius as needed\
+                      color: Colors.white,
+                      border: Border.all(
+                        color: Colors.black, // Border color
+                        width: 1.0, // Border width
+                      ),
+                    ),
+                    padding: EdgeInsets.all(8.0), // Adjust padding as needed
+                    child: Text(
+                      sourceS!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.lato()
+                    ),
+                  ),
+                ),
+                sourceCoordinates,
+
+              );
+            }
+        ),
+        Marker(
+            markerId: MarkerId('destination'),
+            position: destCoordinates,
+            icon: BitmapDescriptor.defaultMarker,
+        onTap: (){
+          _customInfoWindowController.addInfoWindow!(
+            Center(
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12.0), // Adjust the radius as needed\
+                  color: Colors.white,
+                  border: Border.all(
+                    color: Colors.black, // Border color
+                    width: 1.0, // Border width
+                  ),
+                ),
+                padding: EdgeInsets.all(8.0), // Adjust padding as needed
+                child: Text(
+                    destS!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.lato()
+                ),
+              ),
+            ),
+            destCoordinates,
+
+          );
+        }
+        ),
       ];
 
       if(makeRouteBool ?? false) {
@@ -342,9 +525,24 @@ class _RerouteState extends State<Reroute> {
             zoomControlsEnabled: false,
             onMapCreated: (GoogleMapController controller) {
               _controller.complete(controller);
+              _customInfoWindowController.googleMapController = controller;
+              _reportController.googleMapController = controller;
+            },
+            onTap: (location){
+              _customInfoWindowController.hideInfoWindow!();
+              _reportController.hideInfoWindow!();
+            },
+            onCameraMove: (position){
+              _customInfoWindowController.onCameraMove!();
+              _reportController.onCameraMove!();
             },
             tileOverlays: _tileOverlays,
           ),
+          CustomInfoWindow(
+              controller: _customInfoWindowController,
+              width: 150,
+          ),
+          CustomInfoWindow(controller: _reportController, width: 200, height: 150),
           Positioned(
             top: 16.5,
             left: 10,
@@ -540,8 +738,29 @@ class _RerouteState extends State<Reroute> {
     }
 
     return LatLngBounds(
-      southwest: LatLng(minLat - 0.6, minLng- 0.6),
-      northeast: LatLng(maxLat + 0.1, maxLng + 0.6),
+      southwest: LatLng(minLat - 0.2, minLng ),
+      northeast: LatLng(maxLat + 0.1, maxLng),
+    );
+  }
+
+  LatLngBounds getBoundsForPolyliness(Iterable<Polyline> polylines) {
+    double minLat = double.infinity;
+    double maxLat = -double.infinity;
+    double minLng = double.infinity;
+    double maxLng = -double.infinity;
+
+    for (Polyline polyline in polylines) {
+      for (LatLng point in polyline.points) {
+        if (point.latitude < minLat) minLat = point.latitude;
+        if (point.latitude > maxLat) maxLat = point.latitude;
+        if (point.longitude < minLng) minLng = point.longitude;
+        if (point.longitude > maxLng) maxLng = point.longitude;
+      }
+    }
+
+    return LatLngBounds(
+      southwest: LatLng(minLat - 0.2, minLng- 0.2),
+      northeast: LatLng(maxLat + 0.2, maxLng + 0.2),
     );
   }
 
@@ -654,6 +873,97 @@ class _RerouteState extends State<Reroute> {
 
   }
 
+  Future<void> updateInvalid(LatLngBounds bounds) async {
+    try {
+      // Fetch reports within the bounds
+      final reports = await _reportsRepository.getReportsWithinBounds(bounds);
+
+      // Convert ReportModel to Marker
+      final markers = await Future.wait(reports.map((report) => _convertToMarker(report)));
+
+      setState(() {
+        invalidMarkers = markers;
+      });
+    } catch (e) {
+      print("Error updating invalid markers: $e");
+    }
+  }
+
+
+  Future<Marker> _convertToMarker(ReportModel report) async {
+    DateTime dateTime = report.timestamp.toDate();
+    BitmapDescriptor customIcon = await _createCustomMarkerBitmapInvalid();
+
+    // Format the date and time
+    String formattedDate = DateFormat('yyyy-MM-dd HH:mm:ss').format(dateTime);
+    return Marker(
+      markerId: MarkerId(report.uid),
+      position: report.location,
+      onTap: () {
+        _reportController.addInfoWindow!(
+          Center(
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12.0), // Adjust the radius as needed\
+                color: Colors.white,
+                border: Border.all(
+                  color: Colors.black, // Border color
+                  width: 1.0, // Border width
+                ),
+              ),
+              padding: EdgeInsets.all(8.0), // Adjust padding as needed
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    report.locName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.lato(fontSize: 15, fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(height: 10,),
+                  Text(
+                    "Landslide Occured At",
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.lato(),
+                  ),
+                  Text(
+                    formattedDate,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.lato(fontSize: 14),
+                  ),
+                  SizedBox(height: 10,),
+                  Text(
+                      report.eventDesc,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.lato()
+                  ),
+                  SizedBox(height: 5,),
+                  Row(
+                    children:[
+                      Icon(CupertinoIcons.exclamationmark_circle_fill, color: Colors.redAccent,),
+                      Text(
+                        "Unverified",
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.lato(fontSize: 14, fontWeight: FontWeight.bold, color:Colors.redAccent),
+                      ),
+                    ]
+                  )
+                ],
+              ),
+            ),
+          ),
+          report.location,
+        );
+      },
+      icon: customIcon, // Use a custom icon if needed
+    );
+  }
+
 
 
   Future<void> generatePolylineFromPoints(List<List<LatLng>> polylineCoordinates, Polyline? polylineIn, {bool isAlternative = false}) async {
@@ -733,8 +1043,8 @@ class _RerouteState extends State<Reroute> {
     adjustCameraForRoute();
 
     if (!isAlternative) {
-      LatLngBounds bounds_ = getBoundsForPolylines(polylinesDummy.values);
-
+      LatLngBounds bounds_ = getBoundsForPolyliness(polylinesDummy.values);
+      updateInvalid(bounds_);
       LatLng northwest = LatLng(
           bounds_.northeast.latitude, bounds_.southwest.longitude);
       print(northwest);
