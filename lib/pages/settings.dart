@@ -77,13 +77,6 @@ class _SettingsState extends State<Settings> {
               },
             ),
             SettingTile(
-              title: 'Help',
-              icon: Icon(FontAwesomeIcons.lifeRing, color: Colors.orange,),
-              onTapFunction: () {
-                // Navigate to profile screen or perform some action
-              },
-            ),
-            SettingTile(
               title: 'Learn More',
               icon: Icon(FontAwesomeIcons.infoCircle, color: Colors.blue,),
               onTapFunction: () {

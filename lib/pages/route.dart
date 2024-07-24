@@ -265,7 +265,7 @@ class _RerouteState extends State<Reroute> {
             (x, y, zoom) {
           // Replace with your tile server URL pattern
           zoom = zoom;
-          return 'http://192.168.1.2:8080/'+zoom.toString()+'/'+x.toString()+'/'+y.toString()+'.png';
+          return 'https://storage.googleapis.com/asap_route_tiles/'+zoom.toString()+'/'+x.toString()+'/'+y.toString()+'.png';
         },
       ),
     );

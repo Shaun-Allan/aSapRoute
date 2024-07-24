@@ -103,78 +103,75 @@ class _ResourcePageState extends State<ResourcePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Search Relief Materials'),
-        backgroundColor: Colors.teal,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Column(
-          children: [
-            TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Search by district',
-                prefixIcon: Icon(Icons.search, color: Colors.teal),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8.0),
-                  borderSide: BorderSide(color: Colors.teal),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8.0),
-                  borderSide: BorderSide(color: Colors.teal, width: 2.0),
+        body: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Column(
+            children: [
+              TextField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  hintText: 'Search by district',
+                  prefixIcon: Icon(Icons.search, color: Colors.teal),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                    borderSide: BorderSide(color: Colors.teal),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                    borderSide: BorderSide(color: Colors.teal, width: 2.0),
+                  ),
                 ),
               ),
-            ),
-            SizedBox(height: 10.0),
-            Expanded(
-              child: _filteredResources.isEmpty
-                  ? Center(
-                child: Text(
-                  'No resources found',
-                  style: GoogleFonts.lato(fontSize: 16.0, color: Colors.grey),
-                ),
-              )
-                  : ListView.builder(
-                itemCount: _filteredResources.length,
-                itemBuilder: (context, index) {
-                  final resource = _filteredResources[index];
-                  return Card(
-                    elevation: 4,
-                    margin: EdgeInsets.symmetric(vertical: 8.0),
-                    child: ListTile(
-                      contentPadding: EdgeInsets.all(12.0),
-                      title: Text(
-                        _getItemName(resource['RESOURCE NAME']),
-                        style: GoogleFonts.lato(
-                          fontSize: 18.0,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.teal,
+              SizedBox(height: 10.0),
+              Expanded(
+                child: _filteredResources.isEmpty
+                    ? Center(
+                  child: Text(
+                    'No resources found',
+                    style: GoogleFonts.lato(fontSize: 16.0, color: Colors.grey),
+                  ),
+                )
+                    : ListView.builder(
+                  itemCount: _filteredResources.length,
+                  itemBuilder: (context, index) {
+                    final resource = _filteredResources[index];
+                    return Card(
+                      color: Colors.white,
+                      elevation: 4,
+                      margin: EdgeInsets.symmetric(vertical: 8.0),
+                      child: ListTile(
+                        contentPadding: EdgeInsets.all(12.0),
+                        title: Text(
+                          _getItemName(resource['RESOURCE NAME']),
+                          style: GoogleFonts.lato(
+                            fontSize: 18.0,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.teal,
+                          ),
+                        ),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (resource['QTY'] != null)
+                              Text('Qty: ${resource['QTY']}', style: GoogleFonts.lato(fontSize: 14.0)),
+                            if (resource['STATE & DISTRICT'] != null)
+                              Text('District: ${_getDistrict(resource['STATE & DISTRICT'])}', style: GoogleFonts.lato(fontSize: 14.0)),
+                            if (resource['DEPARTMENT AGENCY DETAILS'] != null) ...[
+                              Text('Contact Person: ${_extractField(resource['DEPARTMENT AGENCY DETAILS'], 'CONTACT PERSON : ')}', style: GoogleFonts.lato(fontSize: 14.0)),
+                              Text('Contact No: ${_extractField(resource['DEPARTMENT AGENCY DETAILS'], 'CONTACT NO. : ')}', style: GoogleFonts.lato(fontSize: 14.0)),
+                              Text('Email ID: ${_extractField(resource['DEPARTMENT AGENCY DETAILS'], 'EMAIL ID : ')}', style: GoogleFonts.lato(fontSize: 14.0)),
+                            ],
+                          ],
                         ),
                       ),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (resource['QTY'] != null)
-                            Text('Qty: ${resource['QTY']}', style: GoogleFonts.lato(fontSize: 14.0)),
-                          if (resource['STATE & DISTRICT'] != null)
-                            Text('District: ${_getDistrict(resource['STATE & DISTRICT'])}', style: GoogleFonts.lato(fontSize: 14.0)),
-                          if (resource['DEPARTMENT AGENCY DETAILS'] != null) ...[
-                            Text('Contact Person: ${_extractField(resource['DEPARTMENT AGENCY DETAILS'], 'CONTACT PERSON : ')}', style: GoogleFonts.lato(fontSize: 14.0)),
-                            Text('Contact No: ${_extractField(resource['DEPARTMENT AGENCY DETAILS'], 'CONTACT NO. : ')}', style: GoogleFonts.lato(fontSize: 14.0)),
-                            Text('Email ID: ${_extractField(resource['DEPARTMENT AGENCY DETAILS'], 'EMAIL ID : ')}', style: GoogleFonts.lato(fontSize: 14.0)),
-                          ],
-                        ],
-                      ),
-                    ),
-                  );
-                },
+                    );
+                  },
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
-    );
+      );
   }
 
   String _getItemName(String? resourceName) {
