@@ -41,6 +41,7 @@ class _RerouteState extends State<Reroute> {
   Completer<GoogleMapController> _controller = Completer();
   final _customInfoWindowController = CustomInfoWindowController();
   final _reportController = CustomInfoWindowController();
+  final _routeController = CustomInfoWindowController();
   final locationController = location.Location();
   List<Marker> _markers = <Marker>[];
   List<Marker> reportMarkers = <Marker>[];
@@ -93,6 +94,11 @@ class _RerouteState extends State<Reroute> {
   bool altGenerated = false;
   bool clearPolylineBool = false;
   Set<Polyline>? polylinesg = {};
+
+  int res_x = 0;
+  int res_y = 0;
+
+  bool destH = false;
 
   int wlen = 0;
   int elen = 0;
@@ -298,6 +304,10 @@ class _RerouteState extends State<Reroute> {
 
   double pMHeight = 300;
 
+  double maxP = 0;
+  double alt1mP = 0;
+  double alt2mP = 0;
+
 
   String? sourceS;
   String? destS;
@@ -366,7 +376,7 @@ class _RerouteState extends State<Reroute> {
       } else if (checkedRouteHasLS) {
         // When the route has been checked for landslides
         if(needAlternateRoute) {
-          pMHeight = 400;
+          pMHeight = 500;
         }
         else{
           pMHeight = 300;
@@ -527,14 +537,17 @@ class _RerouteState extends State<Reroute> {
               _controller.complete(controller);
               _customInfoWindowController.googleMapController = controller;
               _reportController.googleMapController = controller;
+              _routeController.googleMapController = controller;
             },
             onTap: (location){
               _customInfoWindowController.hideInfoWindow!();
               _reportController.hideInfoWindow!();
+              _routeController.hideInfoWindow!();
             },
             onCameraMove: (position){
               _customInfoWindowController.onCameraMove!();
               _reportController.onCameraMove!();
+              _routeController.onCameraMove!();
             },
             tileOverlays: _tileOverlays,
           ),
@@ -542,7 +555,11 @@ class _RerouteState extends State<Reroute> {
               controller: _customInfoWindowController,
               width: 150,
           ),
-          CustomInfoWindow(controller: _reportController, width: 200, height: 150),
+          CustomInfoWindow(
+            controller: _routeController,
+            width: 150,
+          ),
+          CustomInfoWindow(controller: _reportController, width: 200, height: 160),
           Positioned(
             top: 16.5,
             left: 10,
@@ -721,6 +738,27 @@ class _RerouteState extends State<Reroute> {
     });
   }
 
+  double getMaxGeoTiffValue(List<LatLng> coordinates, List<List<dynamic>> geoTiffData, int res_x, int res_y) {
+    double maxGeoTiffValue = double.negativeInfinity;
+
+    for (var coordinate in coordinates) {
+      int latIndex = _getGeoTIFFIndex(coordinate.latitude, true) - res_y;
+      int lngIndex = _getGeoTIFFIndex(coordinate.longitude, false) - res_x;
+
+      // Ensure the indices are within the bounds of the geoTiffData array
+      if (latIndex >= 0 && latIndex < geoTiffData.length &&
+          lngIndex >= 0 && lngIndex < geoTiffData[latIndex].length) {
+        double value = geoTiffData[latIndex][lngIndex] ?? 0;
+
+        if (value > maxGeoTiffValue) {
+          maxGeoTiffValue = value;
+        }
+      }
+    }
+
+    return maxGeoTiffValue;
+  }
+
 
   LatLngBounds getBoundsForPolylines(Iterable<Polyline> polylines) {
     double minLat = double.infinity;
@@ -864,7 +902,7 @@ class _RerouteState extends State<Reroute> {
       polylineId: PolylineId('polyline' + id),
       color: Colors.blueAccent,
       points: polylineCoordinates,
-      width: 4
+      width: 4,
     );
   print('pid');
   print(pid);
@@ -967,6 +1005,10 @@ class _RerouteState extends State<Reroute> {
 
 
   Future<void> generatePolylineFromPoints(List<List<LatLng>> polylineCoordinates, Polyline? polylineIn, {bool isAlternative = false}) async {
+    setState(() {
+      destH = false;
+    });
+
     if (!isAlternative) {
       setState(() {
         polylines.clear();
@@ -985,7 +1027,7 @@ class _RerouteState extends State<Reroute> {
           polylineId: PolylineId('polyline' + k.toString()),
           color: Colors.blueAccent,
           points: polylineCoordinates[k],
-          width: 4
+          width: 4,
       );
       print('pid');
       print(pid);
@@ -1058,6 +1100,12 @@ class _RerouteState extends State<Reroute> {
       int width = southeastX - northwestX;
       int height = -(northwestY - southeastY);
 
+      setState(() {
+        res_x = northwestX;
+        res_y = northwestY;
+      });
+
+
       print('Northwest corner indices: x=$northwestX, y=$northwestY');
       print('Southeast corner indices: x=$southeastX, y=$southeastY');
       print(width);
@@ -1070,6 +1118,83 @@ class _RerouteState extends State<Reroute> {
 
 
       await _fetchGeoTIFFData(northwestX, northwestY, width, height);
+
+
+      int lat = _getGeoTIFFIndex(dCo!.latitude, true) - res_y;
+      int lng = _getGeoTIFFIndex(dCo!.longitude, false) - res_x;
+
+      setState(() {
+        maxP = getMaxGeoTiffValue(orgP!.points, _geotiffData!, northwestX, northwestY);
+      });
+
+      setState(() {
+        orgP = Polyline(polylineId: orgP!.polylineId, width: orgP!.width, points: orgP!.points,
+          onTap: () {
+          print("hey p");
+            double maxP = getMaxGeoTiffValue(orgP!.points, _geotiffData!, northwestX, northwestY);
+          print("hey p");
+            _routeController.addInfoWindow!(
+              Center(
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12.0), // Adjust the radius as needed\
+                    color: Colors.white,
+                    border: Border.all(
+                      color: Colors.black, // Border color
+                      width: 1.0, // Border width
+                    ),
+                  ),
+                  padding: EdgeInsets.all(8.0), // Adjust padding as needed
+                  child: Column(
+                    children: [
+                      Text(
+                          "Max Probability Along the Route",
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.lato(fontSize: 14, fontWeight: FontWeight.bold),
+                      ),
+                      Text(
+                        "${maxP.toStringAsFixed(2)}",
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.lato(fontSize: 15, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              orgP!.points[orgP!.points.length ~/2],
+            );
+          },
+        );
+      });
+      double val_ = 0;
+      if(_geotiffData![lat][lng] != null){
+        val_ = _geotiffData![lat][lng];
+      }
+
+      if(val_  > 0.6){
+        setState(() {
+          destH = true;
+        });
+        showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: Text('Warning'),
+                content: Text('The destination falls in a landslide-prone region.'),
+                actions: <Widget>[
+                  TextButton(
+                    child: Text('OK'),
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                  ),
+                ],
+              );
+            }
+        );
+      }
       //
       //
       //
@@ -1364,6 +1489,12 @@ class _RerouteState extends State<Reroute> {
                   decoration: BoxDecoration(
                     color: Colors.blueGrey[50], // Bluish-grey background
                     borderRadius: BorderRadius.circular(50), // Rounded borders
+                    border: destH
+                        ? Border.all(
+                      color: Colors.red, // Border color when condition is true
+                      width: 2.0, // Border width
+                    )
+                        : null,
                   ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -1371,7 +1502,14 @@ class _RerouteState extends State<Reroute> {
                     children: [
                       Padding(
                         padding: const EdgeInsets.only(left: 10.0),
-                        child: Text("Destination", style: GoogleFonts.lato(fontSize: 12, color: Colors.grey)),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text("Destination", style: GoogleFonts.lato(fontSize: 12, color: destH ? Colors.redAccent : Colors.grey)),
+                            if(destH)
+                              Text("LANDSLIDE PRONE REGION", style: GoogleFonts.lato(fontSize: 12, color: Colors.red)),
+                          ],
+                        ),
                       ),
                       Padding(
                         padding: const EdgeInsets.only(left: 10.0),
@@ -1379,7 +1517,7 @@ class _RerouteState extends State<Reroute> {
                           destS!,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.openSans(fontSize: 14, fontWeight: FontWeight.w500),
+                          style: GoogleFonts.openSans(fontSize: 14, fontWeight: FontWeight.w500, color: destH ? Colors.red : Colors.black),
                         ),
                       ),
                     ],
@@ -1451,6 +1589,54 @@ class _RerouteState extends State<Reroute> {
                 ),
               ],
             ),
+          ),
+          SizedBox(height:5,),
+          SizedBox(height:5,),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Padding(
+              padding: const EdgeInsets.only(left: 8),
+              child: Text(
+                "Max Probability of Landslide along the Route",
+                style: GoogleFonts.lato(),
+              ),
+            ),
+          ),
+          SizedBox(height: 5),
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  padding: EdgeInsets.symmetric(vertical: 10, horizontal: 10),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(50),
+                    border: Border.all(
+                      color: Colors.grey, // Border color
+                      width: 2, // Bordr width
+                    ),// Rounded borders
+                  ),
+                  child: Row(
+                    children: [
+                      Spacer(),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 0.0),
+                        child: Column(
+                          children: [
+                            Text(
+                              "${(maxP * 100).toStringAsFixed(2)} %",
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: GoogleFonts.poppins(fontSize: 15, fontWeight: FontWeight.w500, color: Colors.grey),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Spacer(),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
           SizedBox(height: 15,),
           Align(
@@ -1543,6 +1729,11 @@ class _RerouteState extends State<Reroute> {
               ),
             ],
           ),
+
+
+
+
+
         ],
       )
           : Container(
@@ -2237,9 +2428,87 @@ class _RerouteState extends State<Reroute> {
     setState(() {
       alt1P = getAlternateRoute(flattenedPolylineCoordinates, 'alt1');
       alt2P = getAlternateRoute(flattenedPolylineCoordinates1, 'alt2');
-      orgP = Polyline(polylineId: orgP!.polylineId, color: Colors.grey, points: orgP!.points, width: orgP!.width);
-      alt1P = Polyline(polylineId: alt1P!.polylineId, color: Colors.blueAccent, points: alt1P!.points, width: alt1P!.width);
-      alt2P = Polyline(polylineId: alt2P!.polylineId, color: Colors.black, points: alt2P!.points, width: alt2P!.width);
+      orgP = Polyline(polylineId: orgP!.polylineId, color: Colors.grey, points: orgP!.points, width: orgP!.width, onTap: orgP!.onTap);
+      alt1P = Polyline(polylineId: alt1P!.polylineId, color: Colors.blueAccent, points: alt1P!.points, width: alt1P!.width,
+        onTap: () {
+          double maxP = getMaxGeoTiffValue(alt1P!.points, _geotiffData!, res_x, res_y);
+          _routeController.addInfoWindow!(
+            Center(
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12.0), // Adjust the radius as needed\
+                  color: Colors.white,
+                  border: Border.all(
+                    color: Colors.black, // Border color
+                    width: 1.0, // Border width
+                  ),
+                ),
+                padding: EdgeInsets.all(8.0), // Adjust padding as needed
+                child: Column(
+                  children: [
+                    Text(
+                      "Max Probability Along Route",
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.lato(fontSize: 14, fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      "${maxP.toStringAsFixed(2)}",
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.lato(fontSize: 15, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            alt1P!.points[alt1P!.points.length ~/2],
+          );
+        },
+      );
+      setState(() {
+        alt1mP = getMaxGeoTiffValue(alt1P!.points, _geotiffData!, res_x, res_y);
+      });
+      alt2P = Polyline(polylineId: alt2P!.polylineId, color: Colors.black, points: alt2P!.points, width: alt2P!.width,
+        onTap: () {
+          double maxP = getMaxGeoTiffValue(alt2P!.points, _geotiffData!, res_x, res_y);
+          _routeController.addInfoWindow!(
+            Center(
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12.0), // Adjust the radius as needed\
+                  color: Colors.white,
+                  border: Border.all(
+                    color: Colors.black, // Border color
+                    width: 1.0, // Border width
+                  ),
+                ),
+                padding: EdgeInsets.all(8.0), // Adjust padding as needed
+                child: Column(
+                  children: [
+                    Text(
+                      "Max Probability Along Route",
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.lato(fontSize: 14, fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      "${maxP.toStringAsFixed(2)}",
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.lato(fontSize: 15, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            alt2P!.points[alt2P!.points.length ~/2],
+          );
+        },
+      );
+    });
+    setState(() {
+      alt2mP = getMaxGeoTiffValue(alt2P!.points, _geotiffData!, res_x, res_y);
     });
     setState(() {
       // polylinesg = [...alt1P!, orgP!].toSet();
