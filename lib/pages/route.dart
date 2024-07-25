@@ -2421,6 +2421,12 @@ class _RerouteState extends State<Reroute> {
         waypoints = <LatLng>[LatLng(24.99069216384761, 93.49441351505337), LatLng(25.90975280684683, 93.72706263642014), LatLng(26.522572056492372, 93.9584987441695)];
         waypoints1 = <LatLng>[LatLng(25.116085853006144, 94.3513613092843),  LatLng(26.068061344815025, 94.88131918521353), LatLng(26.232957450787048, 94.8112047552375), LatLng(26.315341367596645, 94.51949869830592)];
       });
+      if(sS == 'Wokha' && dS == 'Imphal'){
+        setState(() {
+          waypoints = waypoints.reversed.toList();
+          waypoints1 = waypoints1.reversed.toList();
+        });
+      }
     }
     setState(() {
       wlen = waypoints1.length;
