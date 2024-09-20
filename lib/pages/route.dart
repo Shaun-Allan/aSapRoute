@@ -265,7 +265,7 @@ class _RerouteState extends State<Reroute> {
             (x, y, zoom) {
           // Replace with your tile server URL pattern
           zoom = zoom;
-          return 'https://storage.googleapis.com/asap_route_tiles/'+zoom.toString()+'/'+x.toString()+'/'+y.toString()+'.png';
+          return 'http://192.168.228.152:8080/'+zoom.toString()+'/'+x.toString()+'/'+y.toString()+'.png';
         },
       ),
     );
@@ -836,7 +836,7 @@ class _RerouteState extends State<Reroute> {
 
 
   Future<List<List<LatLng>>> fetchPolylinePoints(LatLng source, LatLng dest) async{
-    String googleAPIKey = "AIzaSyCYHi0alROcEdEIV97imNAvkSKUEMvI4dA";
+    String googleAPIKey = "AIzaSyAg3BKDZdxhvGE6Mu_AQnroyagbG0FKLjE";
     PolylinePoints polylinePoints = PolylinePoints();
     // List<LatLng> polylineCoordinates = [];
 
@@ -874,21 +874,34 @@ class _RerouteState extends State<Reroute> {
     print(start_y);
     print(width);
     print(height);
-    final response = await http.get(Uri.parse('https://optimal-harbor-429914-j2.el.r.appspot.com/geotiff-data?start_x=$start_x&start_y=$start_y&width=$width&height=$height'));
+
+    final response = await http.get(Uri.parse(
+        'http://192.168.228.152:8081/geotiff-data?start_x=$start_x&start_y=$start_y&width=$width&height=$height'));
+
+    print("Response:");
+    print(response);
 
     if (response.statusCode == 200) {
-      // _geotiffData = List<List<dynamic>>.from(json.decode(response.body));
-      _geotiffData = List<List<dynamic>>.from(json.decode(response.body))
-          .map((list) => list.map((e) => e?.toDouble()).toList())
-          .toList();
-      print(_geotiffData);
+      try {
+        // Decode the response and convert data, handling NaN by replacing with null
+        _geotiffData = List<List<dynamic>>.from(json.decode(response.body))
+            .map((list) => list.map((e) => e == null || e.toString() == 'NaN' ? null : e?.toDouble()).toList())
+            .toList();
 
-      print(_geotiffData!.length);
-      print(_geotiffData![0].length);
-      print('Data Type: ${_geotiffData.runtimeType}');
-      setState(() {
-        // _geotiffData = data;
-      });
+
+        print('GeoTIFF Data:');
+        print(_geotiffData);
+        print('Rows: ${_geotiffData!.length}');
+        print('Columns in first row: ${_geotiffData![0].length}');
+        print('Data Type: ${_geotiffData.runtimeType}');
+
+        setState(() {
+          // Trigger UI update with new data
+        });
+      } catch (e) {
+        print('Error parsing the data: $e');
+        throw Exception('Failed to parse GeoTIFF data');
+      }
     } else {
       print('Status code: ${response.statusCode}');
       print('Response body: ${response.body}');
@@ -896,6 +909,7 @@ class _RerouteState extends State<Reroute> {
       throw Exception('Failed to load GeoTIFF data');
     }
   }
+
 
 
 
@@ -1980,7 +1994,7 @@ class _RerouteState extends State<Reroute> {
     //   position: dest,
     //   infoWindow: InfoWindow(title: 'Destination'),
     // ));
-    String googleAPIKey = "AIzaSyCYHi0alROcEdEIV97imNAvkSKUEMvI4dA";
+    String googleAPIKey = "AIzaSyAg3BKDZdxhvGE6Mu_AQnroyagbG0FKLjE";
 
     List<List<LatLng>> polylineCoordinates = [];
     for (int i = 0; i < fullRoute.length - 1; i++) {

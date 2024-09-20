@@ -119,7 +119,7 @@ class _InputPageState extends State<InputPage> {
   }
 
   void getSuggestion(String input) async {
-    String kPLACES_API_KEY = "AIzaSyCYHi0alROcEdEIV97imNAvkSKUEMvI4dA";
+    String kPLACES_API_KEY = "AIzaSyAg3BKDZdxhvGE6Mu_AQnroyagbG0FKLjE";
     String groundURL = 'https://maps.googleapis.com/maps/api/place/autocomplete/json';
     String request = '$groundURL?input=$input&key=$kPLACES_API_KEY&sessiontoken=$_sessionToken';
 

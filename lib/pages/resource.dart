@@ -1,195 +1,231 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_database/firebase_database.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../services/ngo_repository.dart';
+import '../model/ngo_model.dart';
 
 class ResourcePage extends StatefulWidget {
-  const ResourcePage({Key? key}) : super(key: key);
+  const ResourcePage({super.key});
 
   @override
   State<ResourcePage> createState() => _ResourcePageState();
 }
 
 class _ResourcePageState extends State<ResourcePage> {
-  final DatabaseReference _databaseReference = FirebaseDatabase.instance.ref();
-  List<Map<String, dynamic>> _resources = [];
-  List<Map<String, dynamic>> _filteredResources = [];
-  TextEditingController _searchController = TextEditingController();
+  late Future<List<NgoModel>> _ngoFuture;
+  List<NgoModel> _filteredNgos = [];
+  String _searchCity = '';
+
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _fetchResources();
-    _searchController.addListener(_searchResources);
+    _ngoFuture = NgoRepository().getNgoDetails();
   }
 
-  @override
-  void dispose() {
-    _searchController.removeListener(_searchResources);
-    _searchController.dispose();
-    super.dispose();
+  void _filterNgos(String city) {
+    setState(() {
+      _searchCity = city.toLowerCase();
+    });
   }
 
-  void _fetchResources() async {
-    try {
-      final snapshot = await _databaseReference.get();
-
-      if (snapshot.value == null) {
-        print('No data available');
-        setState(() {
-          _resources = [];
-          _filteredResources = [];
-        });
-        return;
-      }
-
-      // Use safe casting to handle unexpected types
-      final data = Map<String, dynamic>.from(
-        snapshot.value as Map<dynamic, dynamic>? ?? {},
-      );
-
-      final resources = <Map<String, dynamic>>[];
-      data.forEach((key, value) {
-        print('Processing key: $key'); // Debugging statement
-        final sheet = value['Sheet1'] ?? [];
-        for (var item in sheet) {
-          try {
-            print('Processing item: $item'); // Debugging statement
-            final resource = Map<String, dynamic>.from(item);
-
-            // Filter out resources where essential fields are empty or S NO is missing
-            if (_isValidResource(resource)) {
-              resources.add(resource);
-            } else {
-              print('Invalid resource: $resource'); // Debugging statement
-            }
-          } catch (e) {
-            print('Error processing item: $item'); // Debugging statement
-            print('Exception: $e'); // Debugging statement
-          }
-        }
-      });
-
-      setState(() {
-        _resources = resources;
-        _filteredResources = resources;
-      });
-    } catch (error) {
-      print('Error fetching data: $error');
-      setState(() {
-        _resources = [];
-        _filteredResources = [];
-      });
+  Future<void> _makePhoneCall(String phoneNumber) async {
+    final Uri launchUri = Uri(
+      scheme: 'tel',
+      path: phoneNumber,
+    );
+    if (await canLaunchUrl(launchUri)) {
+      await launchUrl(launchUri);
+    } else {
+      throw 'Could not launch $phoneNumber';
     }
   }
 
-  bool _isValidResource(Map<String, dynamic> resource) {
-    return resource['S NO'] != null &&
-        resource['S NO'].toString().trim().isNotEmpty &&
-        resource['RESOURCE NAME']?.toString().trim().isNotEmpty == true &&
-        resource['QTY']?.toString().trim().isNotEmpty == true &&
-        resource['STATE & DISTRICT']?.toString().trim().isNotEmpty == true;
+  Future<void> _openMap(String address) async {
+    final Uri launchUri = Uri(
+      scheme: 'geo',
+      path: '0,0',
+      queryParameters: {'q': address},
+    );
+
+    if (await canLaunchUrl(launchUri)) {
+      await launchUrl(launchUri);
+    } else {
+      throw 'Could not open map for $address';
+    }
   }
 
-  void _searchResources() {
-    final query = _searchController.text.toLowerCase();
-    setState(() {
-      _filteredResources = _resources.where((resource) {
-        final district = resource['STATE & DISTRICT']?.toString().toLowerCase() ?? '';
-        return district.contains(query);
-      }).toList();
-    });
+  void _showHelplineDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Helplines'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _helplineTile('NATIONAL EMERGENCY NUMBER', '112'),
+              _helplineTile('POLICE', '100'),
+              _helplineTile('FIRE', '101'),
+              _helplineTile('AMBULANCE', '102'),
+              _helplineTile('Disaster Management Services', '108'),
+              _helplineTile('N.D.M.A', '01126701728'),
+            ],
+          ),
+          actions: [
+            TextButton(
+              child: const Text('Close'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        body: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Column(
-            children: [
-              TextField(
-                controller: _searchController,
-                decoration: InputDecoration(
-                  hintText: 'Search by district',
-                  prefixIcon: Icon(Icons.search, color: Colors.teal),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8.0),
-                    borderSide: BorderSide(color: Colors.teal),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8.0),
-                    borderSide: BorderSide(color: Colors.teal, width: 2.0),
-                  ),
-                ),
+      appBar: AppBar(
+        title: const Text('NGO Resources'),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+
+            // Search bar to input city name
+            TextField(
+              controller: _searchController,
+              decoration: const InputDecoration(
+                labelText: 'Search by City',
+                prefixIcon: Icon(Icons.search),
               ),
-              SizedBox(height: 10.0),
-              Expanded(
-                child: _filteredResources.isEmpty
-                    ? Center(
-                  child: Text(
-                    'No resources found',
-                    style: GoogleFonts.lato(fontSize: 16.0, color: Colors.grey),
-                  ),
-                )
-                    : ListView.builder(
-                  itemCount: _filteredResources.length,
-                  itemBuilder: (context, index) {
-                    final resource = _filteredResources[index];
-                    return Card(
-                      color: Colors.white,
-                      elevation: 4,
-                      margin: EdgeInsets.symmetric(vertical: 8.0),
-                      child: ListTile(
-                        contentPadding: EdgeInsets.all(12.0),
-                        title: Text(
-                          _getItemName(resource['RESOURCE NAME']),
-                          style: GoogleFonts.lato(
-                            fontSize: 18.0,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.teal,
-                          ),
-                        ),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            if (resource['QTY'] != null)
-                              Text('Qty: ${resource['QTY']}', style: GoogleFonts.lato(fontSize: 14.0)),
-                            if (resource['STATE & DISTRICT'] != null)
-                              Text('District: ${_getDistrict(resource['STATE & DISTRICT'])}', style: GoogleFonts.lato(fontSize: 14.0)),
-                            if (resource['DEPARTMENT AGENCY DETAILS'] != null) ...[
-                              Text('Contact Person: ${_extractField(resource['DEPARTMENT AGENCY DETAILS'], 'CONTACT PERSON : ')}', style: GoogleFonts.lato(fontSize: 14.0)),
-                              Text('Contact No: ${_extractField(resource['DEPARTMENT AGENCY DETAILS'], 'CONTACT NO. : ')}', style: GoogleFonts.lato(fontSize: 14.0)),
-                              Text('Email ID: ${_extractField(resource['DEPARTMENT AGENCY DETAILS'], 'EMAIL ID : ')}', style: GoogleFonts.lato(fontSize: 14.0)),
-                            ],
-                          ],
-                        ),
+              onChanged: (value) {
+                _filterNgos(value);
+              },
+            ),
+            const SizedBox(height: 20),
+
+            FutureBuilder<List<NgoModel>>(
+              future: _ngoFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                } else if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                } else if (snapshot.hasData) {
+                  final ngos = snapshot.data!;
+                  _filteredNgos = ngos.where((ngo) {
+                    return ngo.address.toLowerCase().contains(_searchCity);
+                  }).toList();
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'NGOs',
+                        style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                       ),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
+                      const SizedBox(height: 10),
+                      ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: _filteredNgos.length,
+                        itemBuilder: (context, index) {
+                          final ngo = _filteredNgos[index];
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8.0),
+                            child: Card(
+                              elevation: 4,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      ngo.name,
+                                      style: const TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.blueAccent,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.location_on, color: Colors.redAccent),
+                                        const SizedBox(width: 6),
+                                        Expanded(
+                                          child: GestureDetector(
+                                            onTap: () => _openMap(ngo.address),
+                                            child: Text(
+                                              ngo.address,
+                                              style: const TextStyle(
+                                                fontSize: 16,
+                                                color: Colors.blue,
+                                                decoration: TextDecoration.underline,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.phone, color: Colors.green),
+                                        const SizedBox(width: 6),
+                                        GestureDetector(
+                                          onTap: () => _makePhoneCall(ngo.phone),
+                                          child: Text(
+                                            ngo.phone,
+                                            style: const TextStyle(
+                                              fontSize: 16,
+                                              color: Colors.blue,
+                                              decoration: TextDecoration.underline,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  );
+                } else {
+                  return const Center(child: Text('No NGOs available'));
+                }
+              },
+            ),
+          ],
         ),
-      );
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _showHelplineDialog,
+        child: const Icon(Icons.phone),
+      ),
+    );
   }
 
-  String _getItemName(String? resourceName) {
-    if (resourceName == null) return 'Unknown';
-    final parts = resourceName.split('ITEM : ');
-    return parts.length > 1 ? parts.last.trim() : 'Unknown';
-  }
-
-  String _getDistrict(String stateAndDistrict) {
-    final parts = stateAndDistrict.split('DISTRICT : ');
-    return parts.length > 1 ? parts.last.trim() : 'N/A';
-  }
-
-  String _extractField(String details, String field) {
-    final startIndex = details.indexOf(field);
-    if (startIndex == -1) return 'N/A';
-    final start = startIndex + field.length;
-    final endIndex = details.indexOf('\n', start);
-    return endIndex == -1 ? details.substring(start).trim() : details.substring(start, endIndex).trim();
+  Widget _helplineTile(String title, String phoneNumber) {
+    return ListTile(
+      title: Text(title),
+      trailing: GestureDetector(
+        onTap: () => _makePhoneCall(phoneNumber),
+        child: const Icon(Icons.call, color: Colors.blue),
+      ),
+    );
   }
 }
