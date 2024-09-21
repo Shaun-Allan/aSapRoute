@@ -70,6 +70,8 @@ dependencies:
   animate_do: ^3.3.4
   custom_info_window: ^1.0.1
   firebase_database: ^11.0.3
+  jwt_decode: ^0.3.1
+  dart_jsonwebtoken: ^2.14.0
 
 dev_dependencies:
   flutter_test:

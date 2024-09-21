@@ -8,6 +8,7 @@ import 'package:shimmer/shimmer.dart';
 import '../../components/report_tile.dart';
 import '../../inheritance/data_hub.dart';
 import '../../model/report_model.dart';
+import 'package:flutter/cupertino.dart';
 
 class UserReportsPage extends StatefulWidget {
   const UserReportsPage({super.key});
@@ -55,69 +56,70 @@ class _UserReportsPageState extends State<UserReportsPage> {
           itemCount: reports.length,
           itemBuilder: (context, index) {
             ReportModel report = reports[index];
-            return Container(
-              margin: const EdgeInsets.only(bottom: 12.0),
-              padding: const EdgeInsets.all(12.0),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12.0),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 10.0,
-                    offset: Offset(0, 5),
+            return GestureDetector(
+              onTap: () {
+                // Navigate to the ReportDetailsPage when the list item is tapped
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ReportDetailsPage(report: report),
                   ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  ListTile(
-                    title: Text(report.locDesc, style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w600)),
-                    subtitle: Text(
-                      '${DateFormat.yMMMd().format(report.timestamp.toDate())} at ${DateFormat.Hm().format(report.timestamp.toDate())}',
-                      style: GoogleFonts.poppins(color: Colors.grey[600]),
+                );
+              },
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 12.0),
+                padding: const EdgeInsets.all(12.0),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12.0),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 10.0,
+                      offset: Offset(0, 5),
                     ),
-                    leading: Icon(
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Icon(
                       report.valid ? Icons.verified : Icons.warning,
                       color: report.valid ? Colors.green : Colors.red,
                     ),
-                    trailing: Icon(Icons.arrow_forward_ios, color: Colors.grey, size: 16.0),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ReportDetailsPage(report: report),
-                        ),
-                      );
-                    },
-                  ),
-                  Divider(color: Colors.grey[300]),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8.0),
-                    child: Row(
-                      children: [
-                        Icon(Icons.location_pin, color: Colors.red, size: 20.0),
-                        SizedBox(width: 8.0),
-                        Text(report.locName, style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w500)),
-                      ],
+                    SizedBox(width: 8.0),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            report.locName,
+                            style: GoogleFonts.poppins(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          Text(
+                            '${DateFormat.yMMMd().format(report.timestamp.toDate())} at ${DateFormat.Hm().format(report.timestamp.toDate())}',
+                            style: GoogleFonts.poppins(
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4.0),
-                    child: Row(
-                      children: [
-                        Icon(Icons.description, color: Colors.blue, size: 20.0),
-                        SizedBox(width: 8.0),
-                        Expanded(child: Text(report.eventDesc, style: GoogleFonts.poppins(fontSize: 16))),
-                      ],
+                    // iPhone-style right arrow
+                    Icon(
+                      CupertinoIcons.right_chevron,
+                      color: Colors.grey,
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             );
           },
         ),
+
+
       ),
     );
   }
